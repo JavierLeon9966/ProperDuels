@@ -15,6 +15,8 @@ use pocketmine\utils\TextFormat;
 final class Session{
 	private $invites = [];
 
+	private $tasks = [];
+
 	private $match = null;
 
 	private $player;
@@ -38,7 +40,7 @@ final class Session{
 			$arenaManager->all(),
 			$matchManager->all(),
 			static function(Arena $a, Match $b): int{
-				return strncasecmp($a->getName(), $b->getArena()->getName());
+				return strcasecmp($a->getName(), $b->getArena()->getName());
 			}
 		)));
 
