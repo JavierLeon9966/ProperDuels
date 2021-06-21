@@ -1,0 +1,50 @@
+name: ProperDuels
+main: JavierLeon9966\ProperDuels\ProperDuels
+author: JavierLeon9966
+version: 1.0.0
+api: 3.14.1
+description: A properly made duels plugin for PocketMine-MP
+website: https://github.com/JavierLeon9966/ProperDuels
+permissions:
+  properduels.command.arena:
+    description: Allows the user to manage arenas
+    default: op
+    children:
+      properduels.command.arena.create:
+        description: Allows the user to create arenas
+        default: op
+      properduels.command.arena.delete:
+        description: Allows the user to delete arenas
+        default: op
+      properduels.command.arena.list:
+        description: Allows the user to list arenas
+        default: op
+  properduels.command.duel:
+    description: Allows the user to duel people and manage arenas
+    default: true
+    children:
+      properduels.command.duel.accept:
+        description: Allows the user to accept a duel request
+        default: true
+      properduels.command.duel.deny:
+        description: Allows the user to deny a duel request
+        default: true
+      properduels.command.duel.leave:
+        description: Allows the user to leave a match
+        default: true
+      properduels.command.duel.queue:
+        description: Allows the user to queue a duel
+        default: true
+  properduels.command.kit:
+    description: Allows the user to manage duel kits
+    default: op
+    children:
+      properduels.command.kit.create:
+        description: Allows the user to create kits
+        default: op
+      properduels.command.kit.delete:
+        description: Allows the user to delete kits
+        default: op
+      properduels.command.kit.list:
+        description: Allows the user to list kits
+        default: op
