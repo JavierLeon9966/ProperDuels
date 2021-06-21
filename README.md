@@ -1,3 +1,4 @@
+# ProperDuels
 ProperDuels is a plugin that adds a duel system into your server. No need to worry about any glitches unlike other duel plugins!
 
 ## Features
