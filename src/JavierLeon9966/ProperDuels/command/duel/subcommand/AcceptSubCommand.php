@@ -8,7 +8,7 @@ use CortexPE\Commando\args\RawStringArgument;
 use CortexPE\Commando\BaseSubCommand;
 use CortexPE\Commando\constraint\InGameRequiredConstraint;
 
-use JavierLeon9966\ProperDuels\match\Match;
+use JavierLeon9966\ProperDuels\game\Game;
 
 use pocketmine\command\CommandSender;
 use pocketmine\utils\TextFormat;
@@ -37,18 +37,18 @@ class AcceptSubCommand extends BaseSubCommand{
 		}
 
 		$arena = $session->getInvite($playerUUID);
-		$matchManager = $this->plugin->getMatchManager();
-		if($matchManager->has($arena->getName())){
+		$gameManager = $this->plugin->getGameManager();
+		if($gameManager->has($arena->getName())){
 			$sender->sendMessage($config->getNested('match.inUse'));
 			return;
 		}
 
-		if($session->getMatch() !== null){
+		if($session->getGame() !== null){
 			$sender->sendMessage($config->getNested('request.invite.playerInDuel'));
 			return;
 		}
 
-		$matchManager->add(new Match($arena, [$session, $sessionManager->get($playerUUID)]));
+		$gameManager->add(new Game($arena, [$session, $sessionManager->get($playerUUID)]));
 
 		$sender->sendMessage(str_replace('{player}', $player->getDisplayName(), $config->getNested('request.accept.success')));
 	}

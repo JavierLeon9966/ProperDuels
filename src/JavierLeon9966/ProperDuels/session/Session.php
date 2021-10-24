@@ -5,7 +5,7 @@ declare(strict_types = 1);
 namespace JavierLeon9966\ProperDuels\session;
 
 use JavierLeon9966\ProperDuels\arena\Arena;
-use JavierLeon9966\ProperDuels\match\Match;
+use JavierLeon9966\ProperDuels\game\Game;
 use JavierLeon9966\ProperDuels\ProperDuels;
 
 use pocketmine\Player;
@@ -17,7 +17,7 @@ final class Session{
 
 	private $tasks = [];
 
-	private $match = null;
+	private $game = null;
 
 	private $player;
 
@@ -31,15 +31,15 @@ final class Session{
 	public function addInvite(Session $session, ?Arena $arena): void{
 		$properDuels = ProperDuels::getInstance();
 		$arenaManager = $properDuels->getArenaManager();
-		if($this->match !== null or $session->getMatch() !== null or $arena === null and count($arenaManager->all()) === 0){
+		if($this->game !== null or $session->getGame() !== null or $arena === null and count($arenaManager->all()) === 0){
 			return;
 		}
 
-		$matchManager = $properDuels->getMatchManager();
-		$arena = $arena ?? $arenaManager->get(array_rand(count($matchManager->all()) === 0 ? $arenaManager->all() : array_udiff(
+		$gameManager = $properDuels->getGameManager();
+		$arena = $arena ?? $arenaManager->get(array_rand(count($gameManager->all()) === 0 ? $arenaManager->all() : array_udiff(
 			$arenaManager->all(),
-			$matchManager->all(),
-			static function(Arena $a, Match $b): int{
+			$gameManager->all(),
+			static function(Arena $a, Game $b): int{
 				return strcasecmp($a->getName(), $b->getArena()->getName());
 			}
 		)));
@@ -48,20 +48,20 @@ final class Session{
 
 		$player = $session->getPlayer();
 
-		if($matchManager->has($arena->getName())){
-			$player->sendMessage($config->getNested('match.InUse'));
+		if($gameManager->has($arena->getName())){
+			$player->sendMessage($config->getNested('game.InUse'));
 			return;
 		}
 
 		$time = $config->getNested('request.expire.time');
 		$player->sendMessage(str_replace(
 			['{player}', '{arena}', '{seconds}'],
-			[$this->player->getDisplayName(), $arena->getName(), $time],
+			[$this->player->getDisplayName(), $arena->getName(), (string)$time],
 			$config->getNested('request.invite.success')
 		));
 		$this->player->sendMessage(str_replace(
 			['{player}', '{arena}', '{seconds}'],
-			[$player->getDisplayName(), $arena->getName(), $time],
+			[$player->getDisplayName(), $arena->getName(), (string)$time],
 			$config->getNested('request.invite.message')
 		));
 
@@ -93,8 +93,8 @@ final class Session{
 		return $this->invites[$rawUUID] ?? null;
 	}
 
-	public function getMatch(): ?Match{
-		return $this->match;
+	public function getGame(): ?Game{
+		return $this->game;
 	}
 
 	public function getPlayer(): Player{
@@ -122,7 +122,7 @@ final class Session{
 		);
 	}
 
-	public function setMatch(?Match $match): void{
-		$this->match = $match;
+	public function setGame(?Game $game): void{
+		$this->game = $game;
 	}
 }

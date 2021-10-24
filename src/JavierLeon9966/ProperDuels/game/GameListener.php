@@ -2,7 +2,7 @@
 
 declare(strict_types = 1);
 
-namespace JavierLeon9966\ProperDuels\match;
+namespace JavierLeon9966\ProperDuels\game;
 
 use JavierLeon9966\ProperDuels\ProperDuels;
 
@@ -10,7 +10,7 @@ use pocketmine\event\Listener;
 use pocketmine\event\player\{PlayerCommandPreprocessEvent, PlayerDeathEvent, PlayerQuitEvent};
 use pocketmine\utils\TextFormat;
 
-final class MatchListener implements Listener{
+final class GameListener implements Listener{
 
 	/**
 	 * @priority HIGHEST
@@ -22,8 +22,8 @@ final class MatchListener implements Listener{
 			$player = $event->getPlayer();
 			$session = $properDuels->getSessionManager()->get($player->getRawUniqueId());
 			if($session !== null){
-				$match = $session->getMatch();
-				if($match !== null){
+				$game = $session->getGame();
+				if($game !== null){
 					$event->setCancelled();
 
 					$player->sendMessage(TextFormat::RED.'You can\'t use commands while in a match!');
@@ -38,9 +38,9 @@ final class MatchListener implements Listener{
 	public function onPlayerDeath(PlayerDeathEvent $event): void{
 		$session = ProperDuels::getInstance()->getSessionManager()->get($event->getPlayer()->getRawUniqueId());
 		if($session !== null){
-			$match = $session->getMatch();
-			if($match !== null){
-				$match->stop($session);
+			$game = $session->getGame();
+			if($game !== null){
+				$game->stop($session);
 
 				$event->setKeepInventory(true);
 				$event->setXpDropAmount(0);
@@ -54,9 +54,9 @@ final class MatchListener implements Listener{
 	public function onPlayerQuit(PlayerQuitEvent $event): void{
 		$session = ProperDuels::getInstance()->getSessionManager()->get($event->getPlayer()->getRawUniqueId());
 		if($session !== null){
-			$match = $session->getMatch();
-			if($match !== null){
-				$match->stop($session);
+			$game = $session->getGame();
+			if($game !== null){
+				$game->stop($session);
 			}
 		}
 	}

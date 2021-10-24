@@ -10,8 +10,8 @@ use JavierLeon9966\ProperDuels\arena\ArenaManager;
 use JavierLeon9966\ProperDuels\command\arena\ArenaCommand;
 use JavierLeon9966\ProperDuels\command\duel\DuelCommand;
 use JavierLeon9966\ProperDuels\command\kit\KitCommand;
+use JavierLeon9966\ProperDuels\game\GameManager;
 use JavierLeon9966\ProperDuels\kit\KitManager;
-use JavierLeon9966\ProperDuels\match\MatchManager;
 use JavierLeon9966\ProperDuels\session\SessionManager;
 
 use poggit\libasynql\libasynql;
@@ -26,7 +26,7 @@ final class ProperDuels extends PluginBase{
 
 	private $kitManager;
 
-	private $matchManager = null;
+	private $gameManager = null;
 
 	private $queueManager;
 
@@ -40,12 +40,12 @@ final class ProperDuels extends PluginBase{
 		return $this->arenaManager;
 	}
 
-	public function getKitManager(): KitManager{
-		return $this->kitManager;
+	public function getGameManager(): ?GameManager{
+		return $this->gameManager;
 	}
 
-	public function getMatchManager(): ?MatchManager{
-		return $this->matchManager;
+	public function getKitManager(): KitManager{
+		return $this->kitManager;
 	}
 
 	public function getQueueManager(): QueueManager{
@@ -159,7 +159,7 @@ final class ProperDuels extends PluginBase{
 	public function onEnable(): void{
 		if(!PacketHooker::isRegistered()) PacketHooker::register($this);
 
-		$this->matchManager = new MatchManager($this);
+		$this->gameManager = new GameManager($this);
 		$this->sessionManager = new SessionManager($this);
 	}
 
@@ -168,7 +168,7 @@ final class ProperDuels extends PluginBase{
 
 		$this->arenaManager->close();
 		$this->kitManager->close();
-		$this->matchManager->close();
+		$this->gameManager->close();
 		$this->sessionManager->close();
 	}
 }

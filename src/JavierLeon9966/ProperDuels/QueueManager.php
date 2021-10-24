@@ -5,7 +5,7 @@ declare(strict_types = 1);
 namespace JavierLeon9966\ProperDuels;
 
 use JavierLeon9966\ProperDuels\arena\Arena;
-use JavierLeon9966\ProperDuels\match\Match;
+use JavierLeon9966\ProperDuels\game\Game;
 
 use pocketmine\item\Item;
 use pocketmine\math\Vector3;
@@ -39,9 +39,9 @@ final class QueueManager{
 
 	public function update(): void{
 		$properDuels = ProperDuels::getInstance();
-		$matchManager = $properDuels->getMatchManager();
+		$gameManager = $properDuels->getGameManager();
 		foreach(array_unique($this->queues, \SORT_REGULAR) as $arena){
-			if(!$matchManager->has($arena->getName())){
+			if(!$gameManager->has($arena->getName())){
 				$sessions = [];
 				foreach(array_slice(array_keys($this->queues, $arena, true), 0, 2) as $rawUUID){
 					$session = $properDuels->getSessionManager()->get($rawUUID);
@@ -54,7 +54,7 @@ final class QueueManager{
 				}
 
 				if(count($sessions) > 1){
-					$matchManager->add(new Match($arena, $sessions));
+					$gameManager->add(new Game($arena, $sessions));
 				}
 			}
 		}

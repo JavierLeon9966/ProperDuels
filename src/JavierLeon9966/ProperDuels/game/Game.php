@@ -2,7 +2,7 @@
 
 declare(strict_types = 1);
 
-namespace JavierLeon9966\ProperDuels\match;
+namespace JavierLeon9966\ProperDuels\game;
 
 use JavierLeon9966\ProperDuels\arena\Arena;
 use JavierLeon9966\ProperDuels\ProperDuels;
@@ -12,7 +12,7 @@ use pocketmine\level\Position;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\utils\Utils;
 
-final class Match{
+final class Game{
 	private $arena;
 
 	private $started = false;
@@ -48,14 +48,14 @@ final class Match{
 
 		$properDuels = ProperDuels::getInstance();
 		$config = $properDuels->getConfig();
-		$matchManager = $properDuels->getMatchManager();
+		$gameManager = $properDuels->getGameManager();
 		$kitManager = $properDuels->getKitManager();
 
 		$arenaName = $this->arena->getName();
 
 		$kit = $this->arena->getKit();
 		if(($kit !== null and !$kitManager->has($kit)) or count($kitManager->all()) === 0){
-			$matchManager->remove($arenaName);
+			$gameManager->remove($arenaName);
 			foreach($this->sessions as $session){
 				$session->getPlayer()->sendMessage($config->getNested('match.failure.kitNotFound'));
 			}
@@ -65,7 +65,7 @@ final class Match{
 		
 		$level = $properDuels->getServer()->getLevelByName($this->arena->getLevelName());
 		if($level === null){
-			$matchManager->remove($arenaName);
+			$gameManager->remove($arenaName);
 			foreach($this->sessions as $session){
 				$session->getPlayer()->sendMessage($config->getNested('match.failure.levelNotFound'));
 			}
@@ -73,7 +73,7 @@ final class Match{
 		}
 
 		foreach($this->sessions as $session){
-			$session->setMatch($this);
+			$session->setGame($this);
 
 			$session->saveInfo();
 
@@ -110,7 +110,7 @@ final class Match{
 
 			if($countdown > 0 and $this->started){
 				foreach($this->sessions as $session){
-					$session->getPlayer()->sendMessage(str_replace('{seconds}', $countdown, $config->getNested('match.countdown.message')));
+					$session->getPlayer()->sendMessage(str_replace('{seconds}', (string)$countdown, $config->getNested('match.countdown.message')));
 				}
 
 				--$countdown;
@@ -159,10 +159,10 @@ final class Match{
 				}
 			}
 
-			$session->setMatch(null);
+			$session->setGame(null);
 			unset($this->sessions[$key]);
 		}
 
-		$properDuels->getMatchManager()->remove($this->arena->getName());
+		$properDuels->getGameManager()->remove($this->arena->getName());
 	}
 }

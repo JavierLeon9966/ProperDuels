@@ -45,7 +45,7 @@ class DuelCommand extends BaseCommand{
 			return;
 		}
 		
-		if($session->getMatch() !== null){
+		if($session->getGame() !== null){
 			$sender->sendMessage($this->plugin->getConfig()->getNested('request.invite.playerInDuel'));
 			return;
 		}

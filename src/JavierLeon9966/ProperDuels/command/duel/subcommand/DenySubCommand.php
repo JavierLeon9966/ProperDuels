@@ -8,8 +8,6 @@ use CortexPE\Commando\args\RawStringArgument;
 use CortexPE\Commando\BaseSubCommand;
 use CortexPE\Commando\constraint\InGameRequiredConstraint;
 
-use JavierLeon9966\ProperDuels\match\Match;
-
 use pocketmine\command\CommandSender;
 use pocketmine\utils\TextFormat;
 
