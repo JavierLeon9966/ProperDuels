@@ -1,7 +1,7 @@
 name: ProperDuels
 main: JavierLeon9966\ProperDuels\ProperDuels
 author: JavierLeon9966
-version: 2.0.0
+version: 2.0.0 
 api: 3.14.1
 description: A properly made duels plugin for PocketMine-MP
 website: https://github.com/JavierLeon9966/ProperDuels
