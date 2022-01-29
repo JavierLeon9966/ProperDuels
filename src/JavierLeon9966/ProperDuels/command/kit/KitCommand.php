@@ -17,7 +17,11 @@ class KitCommand extends BaseCommand{
 	}
 
 	public function prepare(): void{
-		$this->setPermission('properduels.command.kit');
+		$this->setPermission(implode(';', [
+			'properduels.command.kit.create',
+			'properduels.command.kit.delete',
+			'properduels.command.kit.list'
+		]));
 		$this->registerSubCommand(new CreateSubCommand($this->plugin, 'create'));
 		$this->registerSubCommand(new DeleteSubCommand($this->plugin, 'delete'));
 		$this->registerSubCommand(new ListSubCommand($this->plugin, 'list'));

@@ -17,7 +17,11 @@ class ArenaCommand extends BaseCommand{
 	}
 
 	public function prepare(): void{
-		$this->setPermission('properduels.command.arena');
+		$this->setPermission(implode(';', [
+			'properduels.command.arena.create',
+			'properduels.command.arena.delete',
+			'properduels.command.arena.list'
+		]));
 		$this->registerSubCommand(new CreateSubCommand($this->plugin, 'create'));
 		$this->registerSubCommand(new DeleteSubCommand($this->plugin, 'delete'));
 		$this->registerSubCommand(new ListSubCommand($this->plugin, 'list'));

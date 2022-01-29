@@ -65,7 +65,11 @@ class DuelCommand extends BaseCommand{
 	public function prepare(): void{
 		$this->addConstraint(new InGameRequiredConstraint($this));
 
-		$this->setPermission('properduels.command.duel');
+		$this->setPermission(implode(';', [
+			'properduels.command.duel.accept',
+			'properduels.command.duel.deny',
+			'properduels.command.duel.queue'
+		]));
 
 		$this->registerArgument(0, new RawStringArgument('player'));
 		$this->registerArgument(1, new RawStringArgument('arena', true));
