@@ -19,6 +19,8 @@ use poggit\libasynql\libasynql;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\TextFormat;
 
+use Webmozart\PathUtil\Path;
+
 final class ProperDuels extends PluginBase{
 	private static $instance = null;
 
@@ -132,8 +134,8 @@ final class ProperDuels extends PluginBase{
 		$config->save();
 
 		$statements = [
-			'sqlite' => 'stmt.sql',
-			'mysql' => 'stmt.sql'
+			'sqlite' => Path::join('sqlite', 'stmt.sql'),
+			'mysql' => Path::join('mysql', 'stmt.sql')
 		];
 
 		$databaseConfig = $config->get('database');
