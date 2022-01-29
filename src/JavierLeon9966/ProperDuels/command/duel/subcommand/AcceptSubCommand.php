@@ -9,10 +9,12 @@ use CortexPE\Commando\BaseSubCommand;
 use CortexPE\Commando\constraint\InGameRequiredConstraint;
 
 use JavierLeon9966\ProperDuels\game\Game;
+use JavierLeon9966\ProperDuels\ProperDuels;
 
 use pocketmine\command\CommandSender;
 use pocketmine\lang\KnownTranslationFactory;
-use pocketmine\utils\TextFormat;
+use pocketmine\player\Player;
+use pocketmine\utils\{AssumptionFailedError, TextFormat};
 
 class AcceptSubCommand extends BaseSubCommand{
 
@@ -25,7 +27,13 @@ class AcceptSubCommand extends BaseSubCommand{
 
 		$config = $this->plugin->getConfig();
 
+		if(!$this->plugin instanceof ProperDuels){
+			throw new \InvalidStateException('This command wasn\'t created by ' . ProperDuels::class);
+		}
 		$sessionManager = $this->plugin->getSessionManager();
+		if(!$sender instanceof Player){
+			throw new AssumptionFailedError(InGameRequiredConstraint::class . ' should have prevented this')
+		}
 		$session = $sessionManager->get($senderUUID = $sender->getUniqueId()->getBytes());
 		if($session === null){
 			$sessionManager->add($sender);

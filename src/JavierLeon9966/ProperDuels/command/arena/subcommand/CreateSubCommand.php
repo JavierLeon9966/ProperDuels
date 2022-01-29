@@ -9,19 +9,27 @@ use CortexPE\Commando\BaseSubCommand;
 use CortexPE\Commando\constraint\InGameRequiredConstraint;
 
 use JavierLeon9966\ProperDuels\arena\Arena;
+use JavierLeon9966\ProperDuels\ProperDuels;
 
 use pocketmine\command\CommandSender;
-use pocketmine\utils\TextFormat;
+use pocketmine\player\Player;
+use pocketmine\utils\{AssumptionFailedError, TextFormat};
 
 class CreateSubCommand extends BaseSubCommand{
 
 	public function onRun(CommandSender $sender, string $aliasUsed, array $args): void{
+		if(!$this->plugin instanceof ProperDuels){
+			throw new \InvalidStateException('This command wasn\'t created by ' . ProperDuels::class);
+		}
 		$arenaManager = $this->plugin->getArenaManager();
 		if($arenaManager->has($args['arena'])){
 			$sender->sendMessage(TextFormat::RED."An arena with the name '$args[arena]' already exists");
 			return;
 		}
 
+		if(!$sender instanceof Player){
+			throw new AssumptionFailedError(InGameRequiredConstraint::class . ' should have prevented this');
+		}
 		$world = $sender->getWorld();
 		foreach(['firstSpawnPos', 'secondSpawnPos'] as $spawn){
 			$pos = $args[$spawn]->floor();

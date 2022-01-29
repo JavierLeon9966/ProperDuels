@@ -7,12 +7,17 @@ namespace JavierLeon9966\ProperDuels\command\arena\subcommand;
 use CortexPE\Commando\args\RawStringArgument;
 use CortexPE\Commando\BaseSubCommand;
 
+use JavierLeon9966\ProperDuels\ProperDuels;
+
 use pocketmine\command\CommandSender;
 use pocketmine\utils\TextFormat;
 
 class DeleteSubCommand extends BaseSubCommand{
 
 	public function onRun(CommandSender $sender, string $aliasUsed, array $args): void{
+		if(!$this->plugin instanceof ProperDuels){
+			throw new \InvalidStateException('This command wasn\'t created by ' . ProperDuels::class);
+		}
 		$arenaManager = $this->plugin->getArenaManager();
 		if(!$arenaManager->has($args['arena'])){
 			$sender->sendMessage(TextFormat::RED."No arena was found by the name '$args[arena]'");

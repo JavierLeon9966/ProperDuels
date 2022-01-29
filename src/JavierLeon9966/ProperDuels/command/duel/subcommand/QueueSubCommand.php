@@ -8,14 +8,23 @@ use CortexPE\Commando\args\RawStringArgument;
 use CortexPE\Commando\BaseSubCommand;
 use CortexPE\Commando\constraint\InGameRequiredConstraint;
 
+use JavierLeon9966\ProperDuels\ProperDuels;
+
 use pocketmine\command\CommandSender;
-use pocketmine\utils\TextFormat;
+use pocketmine\player\Player;
+use pocketmine\utils\{AssumptionFailedError, TextFormat};
 
 class QueueSubCommand extends BaseSubCommand{
 
 	public function onRun(CommandSender $sender, string $commandLabel, array $args): void{
+		if(!$this->plugin instanceof ProperDuels){
+			throw new \InvalidStateException('This command wasn\'t created by ' . ProperDuels::class);
+		}
 		$arenaManager = $this->plugin->getArenaManager();
 		$queueManager = $this->plugin->getQueueManager();
+		if(!$sender instanceof Player){
+			throw new AssumptionFailedError(InGameRequiredConstraint::class . ' should have prevented this')
+		}
 		$rawUUID = $sender->getUniqueId()->getBytes();
 		if(isset($args['arena'])){
 			$arena = $arenaManager->get($args['arena']);
