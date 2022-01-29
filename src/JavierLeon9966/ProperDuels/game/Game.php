@@ -8,8 +8,8 @@ use JavierLeon9966\ProperDuels\arena\Arena;
 use JavierLeon9966\ProperDuels\ProperDuels;
 use JavierLeon9966\ProperDuels\session\Session;
 
-use pocketmine\level\Position;
-use pocketmine\scheduler\ClosureTask;
+use pocketmine\world\Position;
+use pocketmine\scheduler\{CancelTaskException, ClosureTask};
 use pocketmine\utils\Utils;
 
 final class Game{
@@ -43,8 +43,8 @@ final class Game{
 			return;
 		}
 
-		$this->sessions[1]->removeInvite($this->sessions[0]->getPlayer()->getRawUniqueId());
-		$this->sessions[0]->removeInvite($this->sessions[1]->getPlayer()->getRawUniqueId());
+		$this->sessions[1]->removeInvite($this->sessions[0]->getPlayer()->getUniqueId()->getBytes());
+		$this->sessions[0]->removeInvite($this->sessions[1]->getPlayer()->getUniqueId()->getBytes());
 
 		$properDuels = ProperDuels::getInstance();
 		$config = $properDuels->getConfig();
@@ -63,8 +63,8 @@ final class Game{
 		}
 		$kit = $kitManager->get($kit !== null ? $kit : array_rand($kitManager->all()));
 		
-		$level = $properDuels->getServer()->getLevelByName($this->arena->getLevelName());
-		if($level === null){
+		$world = $properDuels->getServer()->getWorldManager()->getWorldByName($this->arena->getLevelName());
+		if($world === null){
 			$gameManager->remove($arenaName);
 			foreach($this->sessions as $session){
 				$session->getPlayer()->sendMessage($config->getNested('match.failure.levelNotFound'));
@@ -78,18 +78,18 @@ final class Game{
 			$session->saveInfo();
 
 			$player = $session->getPlayer();
-			$properDuels->getQueueManager()->remove($player->getRawUniqueId());
+			$properDuels->getQueueManager()->remove($player->getUniqueId()->getBytes());
 
 			$player->getArmorInventory()->setContents($kit->getArmor());
 			$player->getInventory()->setContents($kit->getInventory());
 
-			$player->setCurrentTotalXp(0);
+			$player->getXpManager()->setCurrentTotalXp(0);
 
 			$player->extinguish();
 			$player->setAirSupplyTicks($player->getMaxAirSupplyTicks());
 			$player->noDamageTicks = (int)(20 * $config->getNested('match.countdown.time'));
 			
-			$player->removeAllEffects();
+			$player->getEffects()->clear();
 			$player->setHealth($player->getMaxHealth());
 			
 			foreach($player->getAttributeMap()->getAll() as $attr){
@@ -99,10 +99,10 @@ final class Game{
 			$player->setImmobile();
 		}
 
-		$this->sessions[0]->getPlayer()->teleport(Position::fromObject($this->arena->getFirstSpawnPos(), $level));
-		$this->sessions[1]->getPlayer()->teleport(Position::fromObject($this->arena->getSecondSpawnPos(), $level));
+		$this->sessions[0]->getPlayer()->teleport(Position::fromObject($this->arena->getFirstSpawnPos(), $world));
+		$this->sessions[1]->getPlayer()->teleport(Position::fromObject($this->arena->getSecondSpawnPos(), $world));
 
-		$task = ProperDuels::getInstance()->getScheduler()->scheduleRepeatingTask(new ClosureTask(function() use($config, &$task): void{
+		ProperDuels::getInstance()->getScheduler()->scheduleRepeatingTask(new ClosureTask(function() use($config): void{
 			static $countdown = null;
 			if($countdown === null){
 				$countdown = (int)$config->getNested('match.countdown.time');
@@ -114,9 +114,7 @@ final class Game{
 				}
 
 				--$countdown;
-			}else{
-				$task->cancel();
-
+			}else
 				foreach($this->sessions as $session){
 					$player = $session->getPlayer();
 
@@ -124,6 +122,7 @@ final class Game{
 
 					$player->sendMessage($config->getNested('match.start'));
 				}
+				throw new CancelTaskException;
 			}
 		}), 20);
 
@@ -145,7 +144,7 @@ final class Game{
 			$player->getArmorInventory()->setContents($info->getArmor());
 			$player->getInventory()->setContents($info->getInventory());
 
-			$player->setCurrentTotalXp($info->getTotalXp());
+			$player->getXpManager()->setCurrentTotalXp($info->getTotalXp());
 
 			if($session !== $defeated){
 				$player->teleport($player->getSpawn());

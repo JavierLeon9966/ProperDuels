@@ -16,7 +16,7 @@ class QueueSubCommand extends BaseSubCommand{
 	public function onRun(CommandSender $sender, string $commandLabel, array $args): void{
 		$arenaManager = $this->plugin->getArenaManager();
 		$queueManager = $this->plugin->getQueueManager();
-		$rawUUID = $sender->getRawUniqueId();
+		$rawUUID = $sender->getUniqueId()->getBytes();
 		if(isset($args['arena'])){
 			$arena = $arenaManager->get($args['arena']);
 			if($arena === null){

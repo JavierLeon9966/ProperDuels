@@ -22,6 +22,6 @@ final class SessionListener implements Listener{
 	 * @priority MONITOR
 	 */
 	public function onPlayerQuit(PlayerQuitEvent $event): void{
-		ProperDuels::getInstance()->getSessionManager()->remove($event->getPlayer()->getRawUniqueId());
+		ProperDuels::getInstance()->getSessionManager()->remove($event->getPlayer()->getUniqueId()->getBytes());
 	}
 }

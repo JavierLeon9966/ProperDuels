@@ -8,7 +8,7 @@ use JavierLeon9966\ProperDuels\arena\Arena;
 use JavierLeon9966\ProperDuels\game\Game;
 use JavierLeon9966\ProperDuels\ProperDuels;
 
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\utils\TextFormat;
 
@@ -65,7 +65,7 @@ final class Session{
 			$config->getNested('request.invite.message')
 		));
 
-		$this->invites[$playerUUID = $player->getRawUniqueId()] = $arena;
+		$this->invites[$playerUUID = $player->getUniqueId()->getBytes()] = $arena;
 
 		if($time > 0){
 			$this->tasks[$playerUUID] = $properDuels->getScheduler()->scheduleDelayedTask(new ClosureTask(function() use($config, $player, $playerUUID): void{
@@ -118,7 +118,7 @@ final class Session{
 		$this->info = new SessionInfo(
 			$this->player->getArmorInventory()->getContents(),
 			$this->player->getInventory()->getContents(),
-			$this->player->getCurrentTotalXp()
+			$this->player->getXpManager()->getCurrentTotalXp()
 		);
 	}
 

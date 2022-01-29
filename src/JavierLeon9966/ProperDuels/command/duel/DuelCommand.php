@@ -11,6 +11,7 @@ use CortexPE\Commando\BaseCommand;
 use JavierLeon9966\ProperDuels\command\duel\subcommand\{AcceptSubCommand, DenySubCommand, QueueSubCommand};
 
 use pocketmine\command\CommandSender;
+use pocketmine\lang\KnownTranslationFactory;
 use pocketmine\utils\TextFormat;
 
 class DuelCommand extends BaseCommand{
@@ -18,9 +19,9 @@ class DuelCommand extends BaseCommand{
 	public function onRun(CommandSender $sender, string $commandLabel, array $args): void{
 		$config = $this->plugin->getConfig();
 		
-		$player = $sender->getServer()->getPlayer($args['player']);
+		$player = $sender->getServer()->getPlayerByPrefix($args['player']);
 		if($player === null){
-			$sender->sendTranslation(TextFormat::RED."%commands.generic.player.notFound");
+			$sender->sendMessage(KnownTranslationFactory::commands_generic_player_notFound()->prefix(TextFormat::RED));
 			return;
 		}elseif($player === $sender){
 			$sender->sendMessage($config->getNested('request.invite.sameTarget'));
@@ -28,13 +29,13 @@ class DuelCommand extends BaseCommand{
 		}
 		
 		$sessionManager = $this->plugin->getSessionManager();
-		$session = $sessionManager->get($playerUUID = $player->getRawUniqueId());
+		$session = $sessionManager->get($playerUUID = $player->getUniqueId()->getBytes());
 		if($session === null){
 			$sessionManager->add($player);
 			$session = $sessionManager->get($playerUUID);
 		}
 		
-		if($session->hasInvite($rawUUID = $sender->getRawUniqueId())){
+		if($session->hasInvite($rawUUID = $sender->getUniqueId()->getBytes())){
 			$sender->sendMessage($config->getNested('request.invite.failure'));
 			return;
 		}

@@ -6,7 +6,7 @@ namespace JavierLeon9966\ProperDuels\session;
 
 use JavierLeon9966\ProperDuels\ProperDuels;
 
-use pocketmine\Player;
+use pocketmine\player\Player;
 
 final class SessionManager{
 
@@ -17,7 +17,7 @@ final class SessionManager{
 	}
 
 	public function add(Player $player): void{
-		$this->sessions[$player->getRawUniqueId()] = new Session($player);
+		$this->sessions[$player->getUniqueId()->getBytes()] = new Session($player);
 	}
 
 	public function all(): array{

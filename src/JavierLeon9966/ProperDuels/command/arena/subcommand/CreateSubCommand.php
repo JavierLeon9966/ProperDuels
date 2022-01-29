@@ -22,10 +22,10 @@ class CreateSubCommand extends BaseSubCommand{
 			return;
 		}
 
-		$level = $sender->getLevelNonNull();
+		$world = $sender->getWorld();
 		foreach(['firstSpawnPos', 'secondSpawnPos'] as $spawn){
 			$pos = $args[$spawn]->floor();
-			if(!$level->isInWorld($pos->x, $pos->y, $pos->z)){
+			if(!$world->isInWorld((int)$pos->x, (int)$pos->y, (int)$pos->z)){
 				$sender->sendMessage(TextFormat::RED.'Cannot set positions outside of the world');
 				return;
 			}
@@ -39,7 +39,7 @@ class CreateSubCommand extends BaseSubCommand{
 
 		$arenaManager->add(new Arena(
 			$args['arena'],
-			$level->getFolderName(),
+			$world->getFolderName(),
 			$args['firstSpawnPos'],
 			$args['secondSpawnPos'],
 			$args['kit'] ?? null

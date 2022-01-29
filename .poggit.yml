@@ -7,7 +7,8 @@ projects:
   ProperDuels:
     libs:
       - src: Paroxity/Commando/Commando
-        version: ^2.1.2
+        branch: PM-4.0
+        version: ^3.0.0
       - src: poggit/libasynql/libasynql
-        version: ^3.3.1
+        version: ^4.0.0
 ...

@@ -11,27 +11,28 @@ use CortexPE\Commando\constraint\InGameRequiredConstraint;
 use JavierLeon9966\ProperDuels\game\Game;
 
 use pocketmine\command\CommandSender;
+use pocketmine\lang\KnownTranslationFactory;
 use pocketmine\utils\TextFormat;
 
 class AcceptSubCommand extends BaseSubCommand{
 
 	public function onRun(CommandSender $sender, string $commandLabel, array $args): void{
-		$player = $sender->getServer()->getPlayer($args['player']);
+		$player = $sender->getServer()->getPlayerByPrefix($args['player']);
 		if($player === null){
-			$sender->sendTranslation(TextFormat::RED."%commands.generic.player.notFound");
+			$sender->sendMessage(KnownTranslationFactory::commands_generic_player_notFound()->prefix(TextFormat::RED));
 			return;
 		}
 
 		$config = $this->plugin->getConfig();
 
 		$sessionManager = $this->plugin->getSessionManager();
-		$session = $sessionManager->get($senderUUID = $sender->getRawUniqueId());
+		$session = $sessionManager->get($senderUUID = $sender->getUniqueId()->getBytes());
 		if($session === null){
 			$sessionManager->add($sender);
 			$session = $sessionManager->get($senderUUID);
 		}
 
-		if(!$session->hasInvite($playerUUID = $player->getRawUniqueId())){
+		if(!$session->hasInvite($playerUUID = $player->getUniqueId()->getBytes())){
 			$sender->sendMessage($config->getNested('request.accept.playerNotFound'));
 			return;
 		}

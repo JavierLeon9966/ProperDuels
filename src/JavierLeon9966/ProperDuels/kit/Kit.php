@@ -18,16 +18,16 @@ final class Kit{
 		$this->name = $name;
 
 		Utils::validateArrayValueType(array_merge($armor, $inventory), static function(Item $_): void{});
-		$this->armor = array_map(static function(Item $item): Item{ return clone $item; }, $armor);
-		$this->inventory = array_map(static function(Item $item): Item{ return clone $item; }, $inventory);
+		$this->armor = Utils::cloneObjectArray($armor);
+		$this->inventory = Utils::cloneObjectArray($inventory);
 	}
 
 	public function getArmor(): array{
-		return array_map(static function(Item $item): Item{ return clone $item; }, $this->armor);
+		return Utils::cloneObjectArray($this->armor);
 	}
 
 	public function getInventory(): array{
-		return array_map(static function(Item $item): Item{ return clone $item; }, $this->inventory);
+		return Utils::cloneObjectArray($this->inventory);
 	}
 
 	public function getName(): string{
