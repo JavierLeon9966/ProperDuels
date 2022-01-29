@@ -23,7 +23,7 @@ class QueueSubCommand extends BaseSubCommand{
 		$arenaManager = $this->plugin->getArenaManager();
 		$queueManager = $this->plugin->getQueueManager();
 		if(!$sender instanceof Player){
-			throw new AssumptionFailedError(InGameRequiredConstraint::class . ' should have prevented this')
+			throw new AssumptionFailedError(InGameRequiredConstraint::class . ' should have prevented this');
 		}
 		$rawUUID = $sender->getUniqueId()->getBytes();
 		if(isset($args['arena'])){

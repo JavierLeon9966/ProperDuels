@@ -28,7 +28,7 @@ class CreateSubCommand extends BaseSubCommand{
 		}
 
 		if(!$sender instanceof Player){
-			throw new AssumptionFailedError(InGameRequiredConstraint::class . ' should have prevented this')
+			throw new AssumptionFailedError(InGameRequiredConstraint::class . ' should have prevented this');
 		}
 		$kitManager->add(new Kit(
 			$args['kit'],

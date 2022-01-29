@@ -31,7 +31,7 @@ class DenySubCommand extends BaseSubCommand{
 		}
 		$sessionManager = $this->plugin->getSessionManager();
 		if(!$sender instanceof Player){
-			throw new AssumptionFailedError(InGameRequiredConstraint::class . ' should have prevented this')
+			throw new AssumptionFailedError(InGameRequiredConstraint::class . ' should have prevented this');
 		}
 		$session = $sessionManager->get($senderUUID = $sender->getUniqueId()->getBytes());
 		if($session === null){
