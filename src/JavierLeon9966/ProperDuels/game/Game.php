@@ -114,7 +114,7 @@ final class Game{
 				}
 
 				--$countdown;
-			}else
+			}else{
 				foreach($this->sessions as $session){
 					$player = $session->getPlayer();
 
