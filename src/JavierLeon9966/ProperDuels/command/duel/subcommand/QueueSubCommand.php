@@ -18,7 +18,7 @@ class QueueSubCommand extends BaseSubCommand{
 
 	public function onRun(CommandSender $sender, string $commandLabel, array $args): void{
 		if(!$this->plugin instanceof ProperDuels){
-			throw new \InvalidStateException('This command wasn\'t created by ' . ProperDuels::class);
+			throw new \UnexpectedValueException('This command wasn\'t created by ' . ProperDuels::class);
 		}
 		$arenaManager = $this->plugin->getArenaManager();
 		$queueManager = $this->plugin->getQueueManager();

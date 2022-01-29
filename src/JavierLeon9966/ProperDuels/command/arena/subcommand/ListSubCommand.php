@@ -15,7 +15,7 @@ class ListSubCommand extends BaseSubCommand{
 
 	public function onRun(CommandSender $sender, string $aliasUsed, array $args): void{
 		if(!$this->plugin instanceof ProperDuels){
-			throw new \InvalidStateException('This command wasn\'t created by ' . ProperDuels::class);
+			throw new \UnexpectedValueException('This command wasn\'t created by ' . ProperDuels::class);
 		}
 		$arenas = array_keys($this->plugin->getArenaManager()->all());
 		$count = count($arenas);

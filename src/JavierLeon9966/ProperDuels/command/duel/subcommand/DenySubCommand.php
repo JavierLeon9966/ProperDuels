@@ -27,7 +27,7 @@ class DenySubCommand extends BaseSubCommand{
 		$config = $this->plugin->getConfig();
 
 		if(!$this->plugin instanceof ProperDuels){
-			throw new \InvalidStateException('This command wasn\'t created by ' . ProperDuels::class);
+			throw new \UnexpectedValueException('This command wasn\'t created by ' . ProperDuels::class);
 		}
 		$sessionManager = $this->plugin->getSessionManager();
 		if(!$sender instanceof Player){

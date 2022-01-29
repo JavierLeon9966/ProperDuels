@@ -16,7 +16,7 @@ class DeleteSubCommand extends BaseSubCommand{
 
 	public function onRun(CommandSender $sender, string $aliasUsed, array $args): void{
 		if(!$this->plugin instanceof ProperDuels){
-			throw new \InvalidStateException('This command wasn\'t created by ' . ProperDuels::class);
+			throw new \UnexpectedValueException('This command wasn\'t created by ' . ProperDuels::class);
 		}
 		$arenaManager = $this->plugin->getArenaManager();
 		if(!$arenaManager->has($args['arena'])){

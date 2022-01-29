@@ -7,6 +7,8 @@ namespace JavierLeon9966\ProperDuels\command\kit\subcommand;
 use CortexPE\Commando\args\RawStringArgument;
 use CortexPE\Commando\BaseSubCommand;
 
+use JavierLeon9966\ProperDuels\ProperDuels;
+
 use pocketmine\command\CommandSender;
 use pocketmine\utils\TextFormat;
 
@@ -14,7 +16,7 @@ class DeleteSubCommand extends BaseSubCommand{
 
 	public function onRun(CommandSender $sender, string $aliasUsed, array $args): void{
 		if(!$this->plugin instanceof ProperDuels){
-			throw new \InvalidStateException('This command wasn\'t created by ' . ProperDuels::class);
+			throw new \UnexpectedValueException('This command wasn\'t created by ' . ProperDuels::class);
 		}
 		$kitManager = $this->plugin->getKitManager();
 		if(!$kitManager->has($args['kit'])){
