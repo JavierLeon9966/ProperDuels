@@ -14,12 +14,12 @@ final class ArenaManager{
 
 	public function __construct(DataConnectorImpl $database){
 		$this->database = $database;
-		$this->database->executeGeneric('properduels.init.arenas');
-		$this->database->executeSelect('properduels.load.arenas', [],
-			function(array $arenas): void{
+		$this->database->executeGeneric('properduels.init.arenas', [], function(): void{
+			$this->database->executeSelect('properduels.load.arenas', [], function(array $arenas): void{
 				$this->arenas = array_map('unserialize', array_column($arenas, 'Arena', 'Name'));
-			}
-		);
+			});
+		});
+		$this->database->waitAll();
 	}
 
 	public function add(Arena $arena): void{

@@ -14,12 +14,12 @@ final class KitManager{
 
 	public function __construct(DataConnectorImpl $database){
 		$this->database = $database;
-		$this->database->executeGeneric('properduels.init.kits');
-		$this->database->executeSelect('properduels.load.kits', [],
-			function(array $kits): void{
+		$this->database->executeGeneric('properduels.init.kits', [], function(): void{
+			$this->database->executeSelect('properduels.load.kits', [], function(array $kits): void{
 				$this->kits = array_map('unserialize', array_column($kits, 'Kit', 'Name'));
-			}
-		);
+			});
+		});
+		$this->database->waitAll();
 	}
 
 	public function add(Kit $kit): void{
