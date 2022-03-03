@@ -41,7 +41,7 @@ class AcceptSubCommand extends BaseSubCommand{
 		}
 
 		if(!$session->hasInvite($playerUUID = $player->getUniqueId()->getBytes())){
-			$sender->sendMessage($config->getNested('request.accept.playerNotFound'));
+			$sender->sendMessage($config->getNested('request.invite.playerNotFound'));
 			return;
 		}
 
