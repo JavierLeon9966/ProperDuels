@@ -49,7 +49,7 @@ final class Session{
 		$player = $session->getPlayer();
 
 		if($gameManager->has($arena->getName())){
-			$player->sendMessage($config->getNested('game.InUse'));
+			$player->sendMessage($config->getNested('match.inUse'));
 			return;
 		}
 
