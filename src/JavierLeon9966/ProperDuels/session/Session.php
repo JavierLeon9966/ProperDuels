@@ -5,17 +5,19 @@ declare(strict_types = 1);
 namespace JavierLeon9966\ProperDuels\session;
 
 use JavierLeon9966\ProperDuels\arena\Arena;
+use JavierLeon9966\ProperDuels\invite\Invite;
 use JavierLeon9966\ProperDuels\game\Game;
 use JavierLeon9966\ProperDuels\ProperDuels;
 
 use pocketmine\player\Player;
-use pocketmine\scheduler\ClosureTask;
 use pocketmine\utils\TextFormat;
 
 final class Session{
+	/**
+	 * @var Invite[]
+	 * @phpstan-var array<string, Invite>
+	 */
 	private $invites = [];
-
-	private $tasks = [];
 
 	private $game = null;
 
@@ -65,24 +67,7 @@ final class Session{
 			$config->getNested('request.invite.message')
 		));
 
-		$this->invites[$playerUUID = $player->getUniqueId()->getBytes()] = $arena;
-
-		if($time > 0){
-			$this->tasks[$playerUUID] = $properDuels->getScheduler()->scheduleDelayedTask(new ClosureTask(function() use($config, $player, $playerUUID): void{
-				unset($this->invites[$playerUUID], $this->tasks[$playerUUID]);
-
-				$player->sendMessage(str_replace(
-					'{player}',
-					$this->player->getDisplayName(),
-					$config->getNested('request.expire.to')
-				));
-				$this->player->sendMessage(str_replace(
-					'{player}',
-					$player->getDisplayName(),
-					$config->getNested('request.expire.from')
-				));
-			}), (int)(20 * $time));
-		}
+		$this->invites[$player->getUniqueId()->getBytes()] = new Invite($arena, $this, $session, (int)(20 * $time));
 	}
 
 	public function getInfo(): SessionInfo{
@@ -90,7 +75,7 @@ final class Session{
 	}
 
 	public function getInvite(string $rawUUID): ?Arena{
-		return $this->invites[$rawUUID] ?? null;
+		return ($this->invites[$rawUUID] ?? null)?->getArena();
 	}
 
 	public function getGame(): ?Game{
@@ -106,11 +91,9 @@ final class Session{
 	}
 
 	public function removeInvite(string $rawUUID): void{
-		unset($this->invites[$rawUUID]);
-
-		if(isset($this->tasks[$rawUUID])){
-			$this->tasks[$rawUUID]->cancel();
-			unset($this->tasks[$rawUUID]);
+		if(isset($this->invites[$rawUUID])){
+			$this->invites[$rawUUID]->close();
+			unset($this->invites[$rawUUID]);
 		}
 	}
 
@@ -124,5 +107,11 @@ final class Session{
 
 	public function setGame(?Game $game): void{
 		$this->game = $game;
+	}
+
+	public function close(): void{
+		foreach($this->invites as $invite){
+			$invite->expire();
+		}
 	}
 }
