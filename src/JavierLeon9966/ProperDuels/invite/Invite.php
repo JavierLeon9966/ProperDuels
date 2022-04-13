@@ -21,7 +21,7 @@ final class Invite{
 		private Arena $arena,
 		private Session $invited,
 		private Session $inviter,
-		private int $time
+		int $time
 	){
 		$properDuels = ProperDuels::getInstance();
 		if($time > 0){
