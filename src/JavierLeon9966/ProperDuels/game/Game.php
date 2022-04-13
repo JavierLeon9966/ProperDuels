@@ -75,9 +75,10 @@ final class Game{
 		foreach($this->sessions as $session){
 			$session->setGame($this);
 
+			$player = $session->getPlayer();
+			$player->removeCurrentWindow();
 			$session->saveInfo();
 
-			$player = $session->getPlayer();
 			$properDuels->getQueueManager()->remove($player->getUniqueId()->getBytes());
 
 			$player->getArmorInventory()->setContents($kit->getArmor());
