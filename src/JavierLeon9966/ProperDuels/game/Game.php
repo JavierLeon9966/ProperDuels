@@ -72,6 +72,11 @@ final class Game{
 			return;
 		}
 
+		$spawns = [
+			Position::fromObject($this->arena->getFirstSpawnPos(), $world),
+			Position::fromObject($this->arena->getSecondSpawnPos(), $world)
+		];
+
 		foreach($this->sessions as $session){
 			$session->setGame($this);
 
@@ -80,6 +85,8 @@ final class Game{
 			$session->saveInfo();
 
 			$properDuels->getQueueManager()->remove($player->getUniqueId()->getBytes());
+
+			$player->teleport(array_shift($spawns));
 
 			$player->getArmorInventory()->setContents($kit->getArmor());
 			$player->getInventory()->setContents($kit->getInventory());
@@ -99,9 +106,6 @@ final class Game{
 
 			$player->setImmobile();
 		}
-
-		$this->sessions[0]->getPlayer()->teleport(Position::fromObject($this->arena->getFirstSpawnPos(), $world));
-		$this->sessions[1]->getPlayer()->teleport(Position::fromObject($this->arena->getSecondSpawnPos(), $world));
 
 		ProperDuels::getInstance()->getScheduler()->scheduleRepeatingTask(new ClosureTask(function() use($config): void{
 			static $countdown = null;
