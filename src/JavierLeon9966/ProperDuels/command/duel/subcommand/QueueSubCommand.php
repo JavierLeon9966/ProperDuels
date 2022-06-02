@@ -47,6 +47,10 @@ class QueueSubCommand extends BaseSubCommand{
 			return;
 		}
 
+		if(count($arenaManager->all()) === 0){
+			$sender->sendMessage(TextFormat::RED.'There are no existing arenas');
+			return;
+		}
 		$queueManager->add($rawUUID);
 		$sender->sendMessage('Successfully added into the queue');
 	}

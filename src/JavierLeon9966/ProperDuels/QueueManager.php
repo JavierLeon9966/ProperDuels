@@ -16,7 +16,11 @@ final class QueueManager{
 
 	public function add(string $rawUUID, ?Arena $arena = null): void{
 		$arenaManager = ProperDuels::getInstance()->getArenaManager();
-		$this->queues[$rawUUID] = $arena ?? (count($this->queues) === 0 ? $arenaManager->get(array_rand($arenaManager->all())) : $this->queues[array_rand($this->queues)]);
+		$arenas = $arenaManager->all();
+		if(count($arenas) === 0){
+			throw new \LogicException("There are no existing arenas");
+		}
+		$this->queues[$rawUUID] = $arena ?? (count($this->queues) === 0 ? $arenaManager->get(array_rand($arenas)) : $this->queues[array_rand($this->queues)]);
 
 		$this->update();
 	}
