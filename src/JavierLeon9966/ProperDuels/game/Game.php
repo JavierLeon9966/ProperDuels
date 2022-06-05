@@ -5,6 +5,9 @@ declare(strict_types = 1);
 namespace JavierLeon9966\ProperDuels\game;
 
 use JavierLeon9966\ProperDuels\arena\Arena;
+use JavierLeon9966\ProperDuels\event\GameFinishEvent;
+use JavierLeon9966\ProperDuels\event\GameStartEvent;
+use JavierLeon9966\ProperDuels\event\GameStopEvent;
 use JavierLeon9966\ProperDuels\ProperDuels;
 use JavierLeon9966\ProperDuels\session\Session;
 
@@ -132,12 +135,25 @@ final class Game{
 		}), 20);
 
 		$this->started = true;
+
+		(new GameStartEvent($this, $this->sessions[0]->getPlayer(), $this->sessions[1]->getPlayer()))->call();
 	}
 
 	public function stop(?Session $defeated = null): void{
 		if(!$this->started){
 			return;
 		}
+
+		if($defeated === null){
+			(new GameStopEvent($this))->call();
+		}else{
+			foreach($this->sessions as $session){
+				if($session !== $defeated){
+					(new GameFinishEvent($this, $session->getPlayer(), $defeated->getPlayer()))->call();
+				}
+			}
+		}
+
 		$this->started = false;
 
 		$properDuels = ProperDuels::getInstance();
