@@ -12,6 +12,6 @@ abstract class GameEvent extends Event{
 	public function __construct(private Game $game){}
 
 	public function getGame(): Game{
-		return $this->game:
+		return $this->game;
 	}
 }
