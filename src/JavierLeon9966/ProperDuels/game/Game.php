@@ -84,6 +84,7 @@ final class Game{
 			$session->setGame($this);
 
 			$player = $session->getPlayer();
+			$player->removeCurrentWindow();
 			$session->saveInfo();
 
 			$properDuels->getQueueManager()->remove($player->getUniqueId()->getBytes());
