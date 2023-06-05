@@ -34,19 +34,8 @@ final class Kit{
 		return $this->name;
 	}
 
-	public function __serialize(): array{
-		$itemSerializerFunc = static function(Item $item): array{ return $item->jsonSerialize(); };
-
-		return [
-			'armor' => array_map($itemSerializerFunc, $this->armor),
-			'inventory' => array_map($itemSerializerFunc, $this->inventory),
-
-			'name' => $this->name
-		];
-	}
-
 	public function __unserialize(array $data): void{
-		$itemDeserializerFunc = \Closure::fromCallable([Item::class, 'jsonDeserialize']);
+		$itemDeserializerFunc = \Closure::fromCallable([Item::class, 'legacyJsonDeserialize']);
 
 		$this->armor = array_map($itemDeserializerFunc, $data['armor']);
 		$this->inventory = array_map($itemDeserializerFunc, $data['inventory']);

@@ -19,7 +19,7 @@ use poggit\libasynql\libasynql;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\TextFormat;
 
-use Webmozart\PathUtil\Path;
+use Symfony\Component\Filesystem\Path;
 
 final class ProperDuels extends PluginBase{
 	private static $instance = null;

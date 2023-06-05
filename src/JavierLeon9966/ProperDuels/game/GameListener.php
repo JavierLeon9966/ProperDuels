@@ -7,7 +7,9 @@ namespace JavierLeon9966\ProperDuels\game;
 use JavierLeon9966\ProperDuels\ProperDuels;
 
 use pocketmine\event\Listener;
-use pocketmine\event\player\{PlayerCommandPreprocessEvent, PlayerDeathEvent, PlayerQuitEvent};
+use pocketmine\event\player\{PlayerDeathEvent, PlayerQuitEvent};
+use pocketmine\event\server\CommandEvent;
+use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
 
 final class GameListener implements Listener{
@@ -15,10 +17,10 @@ final class GameListener implements Listener{
 	/**
 	 * @priority HIGHEST
 	 */
-	public function onPlayerCommandPreprocess(PlayerCommandPreprocessEvent $event): void{
+	public function onCommandEvent(CommandEvent $event): void{
 		$properDuels = ProperDuels::getInstance();
-		if($event->getMessage()[0] === '/' and !$properDuels->getConfig()->getNested('match.allow-commands')){
-			$player = $event->getPlayer();
+		$player = $event->getSender();
+		if($player instanceof Player && !$properDuels->getConfig()->getNested('match.allow-commands')){
 			$session = $properDuels->getSessionManager()->get($player->getUniqueId()->getBytes());
 			if($session !== null){
 				$game = $session->getGame();

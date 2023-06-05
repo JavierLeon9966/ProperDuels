@@ -2,13 +2,13 @@
 build-by-default: true
 branches:
 - master
-- "legacy/PM3"
 projects:
   ProperDuels:
     libs:
-      - src: Paroxity/Commando/Commando
-        branch: PM-4.0
-        version: ^3.0.0
+      - src: ACM-PocketMine-MP/Commando/Commando # Temporary until the original updates
+        version: ^3.2.0
+        branch: PM5
       - src: poggit/libasynql/libasynql
-        version: ^4.0.0
+        branch: "pm5"
+        version: ^4.1.0
 ...

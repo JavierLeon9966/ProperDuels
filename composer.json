@@ -1,0 +1,46 @@
+{
+  "name": "javierleon9966/properduels",
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "description": "A properly made duels plugin for PocketMine-MP",
+  "type": "project",
+  "license": "GPL-3.0-only",
+  "require": {
+    "pocketmine/pocketmine-mp": "^5.0.0",
+    "sof3/libasynql": "dev-pm5",
+    "muqsit/simple-packet-handler": "dev-pm5",
+    "acm-pocketmine-mp/commando": "3.2.0"
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^1.2.0",
+    "phpstan/phpstan-strict-rules": "^1.0",
+    "phpstan/extension-installer": "^1.0"
+  },
+  "repositories": [
+    {
+      "type": "package",
+      "package": {
+        "name": "acm-pocketmine-mp/commando",
+        "version": "3.2.0",
+        "autoload": {
+          "classmap": ["src/"]
+        },
+        "source": {
+          "url": "https://github.com/acm-pocketmine-mp/commando",
+          "type": "git",
+          "reference": "PM5"
+        }
+      }
+    }
+  ],
+  "autoload": {
+    "psr-0": {
+      "JavierLeon9966\\ProperDuels\\": "src"
+    }
+  },
+  "config": {
+    "allow-plugins": {
+      "phpstan/extension-installer": true
+    }
+  }
+}

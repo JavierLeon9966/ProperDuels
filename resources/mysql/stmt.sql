@@ -4,15 +4,24 @@
 -- #    { kits
 CREATE TABLE IF NOT EXISTS Kits(
   Name VARCHAR(32) NOT NULL,
-  Kit TEXT NOT NULL,
+  Armor LONGBLOB NOT NULL,
+  Inventory LONGBLOB NOT NULL,
   PRIMARY KEY(Name)
 );
 -- #    }
 -- #    { arenas
 CREATE TABLE IF NOT EXISTS Arenas(
   Name VARCHAR(32) NOT NULL,
-  Arena TEXT NOT NULL,
-  PRIMARY KEY(Name)
+  LevelName VARCHAR(64) NOT NULL,
+  FirstSpawnPosX DOUBLE NOT NULL,
+  FirstSpawnPosY DOUBLE NOT NULL,
+  FirstSpawnPosZ DOUBLE NOT NULL,
+  SecondSpawnPosX DOUBLE NOT NULL,
+  SecondSpawnPosY DOUBLE NOT NULL,
+  SecondSpawnPosZ DOUBLE NOT NULL,
+  Kit VARCHAR(32),
+  PRIMARY KEY(Name),
+  FOREIGN KEY(Kit) REFERENCES Kits(Name) ON DELETE SET NULL
 );
 -- #    }
 -- #  }
@@ -27,17 +36,54 @@ SELECT * FROM Arenas;
 -- #  { register
 -- #    { kit
 -- #      :name string
--- #      :kit string
-INSERT INTO Kits(Name, Kit)
-VALUES (:name, :kit)
-ON DUPLICATE KEY UPDATE Kit = :kit;
+-- #      :armor string
+-- #      :inventory string
+INSERT INTO Kits(Name, Armor, Inventory)
+VALUES (:name, :armor, :inventory)
+ON DUPLICATE KEY UPDATE Armor = :armor, Inventory = :inventory;
 -- #    }
 -- #    { arena
 -- #      :name string
--- #      :arena string
-INSERT INTO Arenas(Name, Arena)
-VALUES (:name, :arena)
-ON DUPLICATE KEY UPDATE Kit = :kit;
+-- #      :levelName string
+-- #      :firstSpawnPosX float
+-- #      :firstSpawnPosY float
+-- #      :firstSpawnPosZ float
+-- #      :secondSpawnPosX float
+-- #      :secondSpawnPosY float
+-- #      :secondSpawnPosZ float
+-- #      :kit ?string
+INSERT INTO Arenas(
+  Name,
+  LevelName,
+  FirstSpawnPosX,
+  FirstSpawnPosY,
+  FirstSpawnPosZ,
+  SecondSpawnPosX,
+  SecondSpawnPosY,
+  SecondSpawnPosZ,
+  Kit
+)
+VALUES (
+  :name,
+  :levelName,
+  :firstSpawnPosX,
+  :firstSpawnPosY,
+  :firstSpawnPosZ,
+  :secondSpawnPosX,
+  :secondSpawnPosY,
+  :secondSpawnPosZ,
+  :kit
+)
+ON DUPLICATE KEY
+UPDATE
+  LevelName = :levelName,
+  FirstSpawnPosX = :firstSpawnPosX,
+  FirstSpawnPosY = :firstSpawnPosY,
+  FirstSpawnPosZ = :firstSpawnPosZ,
+  SecondSpawnPosX = :secondSpawnPosX,
+  SecondSpawnPosY = :secondSpawnPosY,
+  SecondSpawnPosZ = :secondSpawnPosZ,
+  Kit = :kit;
 -- #    }
 -- #  }
 -- #  { delete
@@ -50,6 +96,35 @@ WHERE Name = :name;
 -- #      :name string
 DELETE FROM Arenas
 WHERE Name = :name;
+-- #    }
+-- #  }
+-- #  { reset
+-- #    { kits
+DROP TABLE Kits;
+-- # &
+CREATE TABLE Kits(
+  Name VARCHAR(32) NOT NULL,
+  Armor LONGBLOB NOT NULL,
+  Inventory LONGBLOB NOT NULL,
+  PRIMARY KEY(Name)
+);
+-- #    }
+-- #    { arenas
+DROP TABLE Arenas;
+-- # &
+CREATE TABLE Arenas(
+  Name VARCHAR(32) NOT NULL,
+  LevelName VARCHAR(64) NOT NULL,
+  FirstSpawnPosX DOUBLE NOT NULL,
+  FirstSpawnPosY DOUBLE NOT NULL,
+  FirstSpawnPosZ DOUBLE NOT NULL,
+  SecondSpawnPosX DOUBLE NOT NULL,
+  SecondSpawnPosY DOUBLE NOT NULL,
+  SecondSpawnPosZ DOUBLE NOT NULL,
+  Kit VARCHAR(32),
+  PRIMARY KEY(Name),
+  FOREIGN KEY(Kit) REFERENCES Kits(Name) ON DELETE SET NULL
+);
 -- #    }
 -- #  }
 -- #}
