@@ -18,8 +18,11 @@ use pocketmine\utils\{AssumptionFailedError, TextFormat};
 
 class DuelCommand extends BaseCommand{
 
+	/** @param array<array-key, mixed> $args */
 	public function onRun(CommandSender $sender, string $commandLabel, array $args): void{
-		$config = $this->plugin->getConfig();
+		$plugin = $this->getOwningPlugin();
+		assert($plugin instanceof ProperDuels);
+		$config = $plugin->getConfig();
 		
 		$player = $sender->getServer()->getPlayerByPrefix($args['player']);
 		if($player === null){
@@ -29,11 +32,8 @@ class DuelCommand extends BaseCommand{
 			$sender->sendMessage($config->getNested('request.invite.sameTarget'));
 			return;
 		}
-		
-		if(!$this->plugin instanceof ProperDuels){
-			throw new \UnexpectedValueException('This command wasn\'t created by ' . ProperDuels::class);
-		}
-		$sessionManager = $this->plugin->getSessionManager();
+
+		$sessionManager = $plugin->getSessionManager();
 		if(!$sender instanceof Player){
 			throw new AssumptionFailedError(InGameRequiredConstraint::class . ' should have prevented this');
 		}
@@ -48,14 +48,14 @@ class DuelCommand extends BaseCommand{
 			return;
 		}
 		
-		$arenaManager = $this->plugin->getArenaManager();
+		$arenaManager = $plugin->getArenaManager();
 		if(isset($args['arena']) and !$arenaManager->has($args['arena'])){
 			$sender->sendMessage(TextFormat::RED."No arena was found by the name '$args[arena]'");
 			return;
 		}
 		
 		if($session->getGame() !== null){
-			$sender->sendMessage($this->plugin->getConfig()->getNested('request.invite.playerInDuel'));
+			$sender->sendMessage($plugin->getConfig()->getNested('request.invite.playerInDuel'));
 			return;
 		}
 		
@@ -65,17 +65,19 @@ class DuelCommand extends BaseCommand{
 	public function prepare(): void{
 		$this->addConstraint(new InGameRequiredConstraint($this));
 
-		$this->setPermission(implode(';', [
+		$this->setPermissions([
 			'properduels.command.duel.accept',
 			'properduels.command.duel.deny',
 			'properduels.command.duel.queue'
-		]));
+		]);
 
 		$this->registerArgument(0, new RawStringArgument('player'));
 		$this->registerArgument(1, new RawStringArgument('arena', true));
 
-		$this->registerSubCommand(new AcceptSubCommand($this->plugin, 'accept'));
-		$this->registerSubCommand(new DenySubCommand($this->plugin, 'deny'));
-		$this->registerSubCommand(new QueueSubCommand($this->plugin, 'queue'));
+		$plugin = $this->getOwningPlugin();
+		assert($plugin instanceof ProperDuels);
+		$this->registerSubCommand(new AcceptSubCommand($plugin, 'accept'));
+		$this->registerSubCommand(new DenySubCommand($plugin, 'deny'));
+		$this->registerSubCommand(new QueueSubCommand($plugin, 'queue'));
 	}
 }

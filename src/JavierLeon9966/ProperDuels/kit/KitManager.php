@@ -4,6 +4,10 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels\kit;
 
+use JavierLeon9966\ProperDuels\utils\ContentsSerializer;
+use pocketmine\nbt\LittleEndianNbtSerializer;
+use pocketmine\nbt\tag\ListTag;
+use pocketmine\nbt\TreeRoot;
 use poggit\libasynql\base\DataConnectorImpl;
 
 final class KitManager{
@@ -16,7 +20,28 @@ final class KitManager{
 		$this->database = $database;
 		$this->database->executeGeneric('properduels.init.kits', [], function(): void{
 			$this->database->executeSelect('properduels.load.kits', [], function(array $kits): void{
-				$this->kits = array_map('unserialize', array_column($kits, 'Kit', 'Name'));
+				if(count($kits) === 0){
+					return;
+				}
+				if(isset($kits[0]['Kit'])){
+					$this->kits = array_map('unserialize', array_column($kits, 'Kit', 'Name'));
+					$this->database->executeGeneric('properduels.reset.kits', [], function(): void{
+						foreach($this->kits as $kit){
+							$this->add($kit);
+						}
+					});
+					return;
+				}
+				/**
+				 * @var string $name
+				 * @var string $serializedArmor
+				 * @var string $serializedInventory
+				 */
+				foreach($kits as ['Name' => $name, 'Armor' => $serializedArmor, 'Inventory' => $serializedInventory]){
+					$armorContents = ContentsSerializer::deserializeItemContents($serializedArmor);
+					$inventoryContents = ContentsSerializer::deserializeItemContents($serializedInventory);
+					$this->kits[$name] = new Kit($name, $armorContents, $inventoryContents);
+				}
 			});
 		});
 		$this->database->waitAll();
@@ -29,7 +54,8 @@ final class KitManager{
 		if(isset($this->database)){
 			$this->database->executeInsert('properduels.register.kit', [
 				'name' => $name,
-				'kit' => serialize($kit)
+				'armor' => ContentsSerializer::serializeItemContents($kit->getArmor()),
+				'inventory' => ContentsSerializer::serializeItemContents($kit->getInventory()),
 			]);
 		}
 	}
@@ -39,8 +65,8 @@ final class KitManager{
 	}
 
 	public function close(): void{
+		$this->database->waitAll();
 		$this->database->close();
-		unset($this->database);
 	}
 
 	public function get(string $kit): ?Kit{
@@ -60,4 +86,5 @@ final class KitManager{
 			]);
 		}
 	}
+
 }

@@ -13,10 +13,13 @@ use pocketmine\utils\TextFormat;
 
 class ListSubCommand extends BaseSubCommand{
 
+	/** @param list<string> $aliases */
+	public function __construct(private readonly ProperDuels $plugin, string $name, string $description = "", array $aliases = []){
+		parent::__construct($name, $description, $aliases);
+	}
+
+	/** @param array<array-key, mixed> $args */
 	public function onRun(CommandSender $sender, string $aliasUsed, array $args): void{
-		if(!$this->plugin instanceof ProperDuels){
-			throw new \UnexpectedValueException('This command wasn\'t created by ' . ProperDuels::class);
-		}
 		$kits = array_keys($this->plugin->getkitManager()->all());
 		$count = count($kits);
 		if($count === 0){
