@@ -74,7 +74,7 @@ final class ArenaManager{
 		$this->database->executeInsert('properduels.register.arena', [
 			'name' => $name,
 			'levelName' => $arena->getLevelName(),
-			'firstSpawnPosX' => $firstSpawnPos->x
+			'firstSpawnPosX' => $firstSpawnPos->x,
 			'firstSpawnPosY' => $firstSpawnPos->y,
 			'firstSpawnPosZ' => $firstSpawnPos->z,
 			'secondSpawnPosX' => $secondSpawnPos->x,
