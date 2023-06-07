@@ -69,9 +69,18 @@ final class ArenaManager{
 		$name = $arena->getName();
 		$this->arenas[$name] = $arena;
 
+		$firstSpawnPos = $arena->getFirstSpawnPos();
+		$secondSpawnPos = $arena->getSecondSpawnPos();
 		$this->database->executeInsert('properduels.register.arena', [
 			'name' => $name,
-			'arena' => serialize($arena)
+			'levelName' => $arena->getLevelName(),
+			'firstSpawnPosX' => $firstSpawnPos->x
+			'firstSpawnPosY' => $firstSpawnPos->y,
+			'firstSpawnPosZ' => $firstSpawnPos->z,
+			'secondSpawnPosX' => $secondSpawnPos->x,
+			'secondSpawnPosY' => $secondSpawnPos->y,
+			'secondSpawnPosZ' => $secondSpawnPos->z,
+			'kit' => $arena->getKit()
 		]);
 	}
 
