@@ -9,14 +9,33 @@ use CortexPE\Commando\constraint\InGameRequiredConstraint;
 use CortexPE\Commando\BaseCommand;
 
 use JavierLeon9966\ProperDuels\command\duel\subcommand\{AcceptSubCommand, DenySubCommand, QueueSubCommand};
+use JavierLeon9966\ProperDuels\arena\ArenaManager;
+use JavierLeon9966\ProperDuels\game\GameManager;
 use JavierLeon9966\ProperDuels\ProperDuels;
 
+use JavierLeon9966\ProperDuels\QueueManager;
+use JavierLeon9966\ProperDuels\session\SessionManager;
 use pocketmine\command\CommandSender;
 use pocketmine\lang\KnownTranslationFactory;
 use pocketmine\player\Player;
-use pocketmine\utils\{AssumptionFailedError, TextFormat};
+use pocketmine\utils\{AssumptionFailedError, Config, TextFormat};
+use pocketmine\plugin\PluginBase;
 
 class DuelCommand extends BaseCommand{
+
+	public function __construct(
+		PluginBase $plugin,
+		string $name,
+		private readonly Config $config,
+		private readonly SessionManager $sessionManager,
+		private readonly GameManager $gameManager,
+		private readonly ArenaManager $arenaManager,
+		private readonly QueueManager $queueManager,
+		string $description = "",
+		array $aliases = []
+	){
+		parent::__construct($plugin, $name, $description, $aliases);
+	}
 
 	/** @param array<array-key, mixed> $args */
 	public function onRun(CommandSender $sender, string $commandLabel, array $args): void{
@@ -76,8 +95,8 @@ class DuelCommand extends BaseCommand{
 
 		$plugin = $this->getOwningPlugin();
 		assert($plugin instanceof ProperDuels);
-		$this->registerSubCommand(new AcceptSubCommand($plugin, 'accept'));
-		$this->registerSubCommand(new DenySubCommand($plugin, 'deny'));
-		$this->registerSubCommand(new QueueSubCommand($plugin, 'queue'));
+		$this->registerSubCommand(new AcceptSubCommand($plugin, 'accept', $this->config, $this->sessionManager, $this->gameManager));
+		$this->registerSubCommand(new DenySubCommand($plugin, 'deny', $this->config, $this->sessionManager));
+		$this->registerSubCommand(new QueueSubCommand($plugin, 'queue', $this->arenaManager, $this->queueManager));
 	}
 }

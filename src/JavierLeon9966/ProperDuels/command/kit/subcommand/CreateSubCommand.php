@@ -9,23 +9,23 @@ use CortexPE\Commando\BaseSubCommand;
 use CortexPE\Commando\constraint\InGameRequiredConstraint;
 
 use JavierLeon9966\ProperDuels\kit\Kit;
-use JavierLeon9966\ProperDuels\ProperDuels;
+use JavierLeon9966\ProperDuels\kit\KitManager;
 
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
 use pocketmine\utils\{AssumptionFailedError, TextFormat};
+use pocketmine\plugin\PluginBase;
 
 class CreateSubCommand extends BaseSubCommand{
 
 	/** @param list<string> $aliases */
-	public function __construct(private readonly ProperDuels $plugin, string $name, string $description = "", array $aliases = []){
-		parent::__construct($name, $description, $aliases);
+	public function __construct(PluginBase $plugin, string $name, private readonly KitManager $kitManager, string $description = "", array $aliases = []){
+		parent::__construct($plugin, $name, $description, $aliases);
 	}
 
 	/** @param array<array-key, mixed> $args */
 	public function onRun(CommandSender $sender, string $aliasUsed, array $args): void{
-		$kitManager = $this->plugin->getKitManager();
-		if($kitManager->has($args['kit'])){
+		if($this->kitManager->has($args['kit'])){
 			$sender->sendMessage(TextFormat::RED."A kit with the name '$args[kit]' already exists");
 			return;
 		}
@@ -33,7 +33,7 @@ class CreateSubCommand extends BaseSubCommand{
 		if(!$sender instanceof Player){
 			throw new AssumptionFailedError(InGameRequiredConstraint::class . ' should have prevented this');
 		}
-		$kitManager->add(new Kit(
+		$this->kitManager->add(new Kit(
 			$args['kit'],
 			$sender->getArmorInventory()->getContents(),
 			$sender->getInventory()->getContents()

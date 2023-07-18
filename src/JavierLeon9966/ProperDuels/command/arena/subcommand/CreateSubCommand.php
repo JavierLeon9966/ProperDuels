@@ -4,12 +4,14 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels\command\arena\subcommand;
 
+use JavierLeon9966\ProperDuels\arena\ArenaManager;
+use JavierLeon9966\ProperDuels\kit\KitManager;
+use pocketmine\plugin\PluginBase;
 use CortexPE\Commando\args\{RawStringArgument, Vector3Argument};
 use CortexPE\Commando\BaseSubCommand;
 use CortexPE\Commando\constraint\InGameRequiredConstraint;
 
 use JavierLeon9966\ProperDuels\arena\Arena;
-use JavierLeon9966\ProperDuels\ProperDuels;
 
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
@@ -17,14 +19,13 @@ use pocketmine\utils\{AssumptionFailedError, TextFormat};
 
 class CreateSubCommand extends BaseSubCommand{
 
-	public function __construct(private readonly ProperDuels $plugin, string $name, string $description = "", array $aliases = []){
-		parent::__construct($name, $description, $aliases);
+	public function __construct(PluginBase $plugin, string $name, private readonly ArenaManager $arenaManager, private readonly KitManager $kitManager, string $description = "", array $aliases = []){
+		parent::__construct($plugin, $name, $description, $aliases);
 	}
 
 	/** @param array<array-key, mixed> $args */
 	public function onRun(CommandSender $sender, string $aliasUsed, array $args): void{
-		$arenaManager = $this->plugin->getArenaManager();
-		if($arenaManager->has($args['arena'])){
+		if($this->arenaManager->has($args['arena'])){
 			$sender->sendMessage(TextFormat::RED."An arena with the name '$args[arena]' already exists");
 			return;
 		}
@@ -41,13 +42,12 @@ class CreateSubCommand extends BaseSubCommand{
 			}
 		}
 
-		$kitManager = $this->plugin->getKitManager();
-		if(isset($args['kit']) and !$kitManager->has($args['kit'])){
+		if(isset($args['kit']) and !$this->kitManager->has($args['kit'])){
 			$sender->sendMessage(TextFormat::RED."No kit was found by the name '$args[kit]'");
 			return;
 		}
 
-		$arenaManager->add(new Arena(
+		$this->arenaManager->add(new Arena(
 			$args['arena'],
 			$world->getFolderName(),
 			$args['firstSpawnPos'],

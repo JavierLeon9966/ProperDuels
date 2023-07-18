@@ -7,9 +7,9 @@
   "license": "GPL-3.0-only",
   "require": {
     "pocketmine/pocketmine-mp": "^5.0.0",
-    "sof3/libasynql": "dev-pm5",
+    "sof3/libasynql": "^4.2.0",
     "muqsit/simple-packet-handler": "dev-pm5",
-    "acm-pocketmine-mp/commando": "3.2.0"
+    "paroxity/commando": "master"
   },
   "require-dev": {
     "phpstan/phpstan": "^1.2.0",
@@ -20,15 +20,15 @@
     {
       "type": "package",
       "package": {
-        "name": "acm-pocketmine-mp/commando",
-        "version": "3.2.0",
+        "name": "paroxity/commando",
+        "version": "master",
         "autoload": {
           "classmap": ["src/"]
         },
         "source": {
-          "url": "https://github.com/acm-pocketmine-mp/commando",
+          "url": "https://github.com/paroxity/commando",
           "type": "git",
-          "reference": "PM5"
+          "reference": "master"
         }
       }
     }

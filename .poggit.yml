@@ -5,9 +5,8 @@ branches:
 projects:
   ProperDuels:
     libs:
-      - src: ACM-PocketMine-MP/Commando/Commando # Temporary until the original updates
-        version: ^3.2.0
-        branch: PM5
+      - src: Paroxity/Commando/Commando
+        version: ^3.1.0
       - src: poggit/libasynql/libasynql
         branch: "pm5"
         version: ^4.1.0

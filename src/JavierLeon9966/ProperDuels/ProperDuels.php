@@ -61,24 +61,6 @@ final class ProperDuels extends PluginBase{
 	public function onLoad(): void{
 		self::$instance = $this;
 
-		$this->getServer()->getCommandMap()->registerAll('properduels', [
-			new ArenaCommand(
-				$this,
-				'arena',
-				'Manage arenas for duel matches.'
-			),
-			new DuelCommand(
-				$this,
-				'duel',
-				'Duel players and queue to a match.'
-			),
-			new KitCommand(
-				$this,
-				'kit',
-				'Manage kits for duel matches.'
-			)
-		]);
-
 		$config = $this->getConfig();
 		$config->setDefaults([
 			'database' => [
@@ -156,13 +138,39 @@ final class ProperDuels extends PluginBase{
 		));
 
 		$this->queueManager = new QueueManager;
+
 	}
 
 	public function onEnable(): void{
 		if(!PacketHooker::isRegistered()) PacketHooker::register($this);
 
-		$this->gameManager = new GameManager($this);
+		$this->gameManager = $gameManager = new GameManager($this);
 		$this->sessionManager = new SessionManager($this);
+		$this->getServer()->getCommandMap()->registerAll('properduels', [
+			new ArenaCommand(
+				$this,
+				'arena',
+				$this->arenaManager,
+				$this->kitManager,
+				'Manage arenas for duel matches.'
+			),
+			new DuelCommand(
+				$this,
+				'duel',
+				$this->getConfig(),
+				$this->sessionManager,
+				$gameManager,
+				$this->arenaManager,
+				$this->queueManager,
+				'Duel players and queue to a match.'
+			),
+			new KitCommand(
+				$this,
+				'kit',
+				$this->kitManager,
+				'Manage kits for duel matches.'
+			)
+		]);
 	}
 
 	public function onDisable(): void{

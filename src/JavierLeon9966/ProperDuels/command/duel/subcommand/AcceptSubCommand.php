@@ -9,18 +9,28 @@ use CortexPE\Commando\BaseSubCommand;
 use CortexPE\Commando\constraint\InGameRequiredConstraint;
 
 use JavierLeon9966\ProperDuels\game\Game;
-use JavierLeon9966\ProperDuels\ProperDuels;
+use JavierLeon9966\ProperDuels\game\GameManager;
 
+use JavierLeon9966\ProperDuels\session\SessionManager;
 use pocketmine\command\CommandSender;
 use pocketmine\lang\KnownTranslationFactory;
 use pocketmine\player\Player;
-use pocketmine\utils\{AssumptionFailedError, TextFormat};
+use pocketmine\utils\{AssumptionFailedError, Config, TextFormat};
+use pocketmine\plugin\PluginBase;
 
 class AcceptSubCommand extends BaseSubCommand{
 
 	/** @param list<string> $aliases */
-	public function __construct(private readonly ProperDuels $plugin, string $name, string $description = "", array $aliases = []){
-		parent::__construct($name, $description, $aliases);
+	public function __construct(
+		PluginBase $plugin,
+		string $name,
+		private readonly Config $config,
+		private readonly SessionManager $sessionManager,
+		private readonly GameManager $gameManager,
+		string $description = "",
+		array $aliases = []
+	){
+		parent::__construct($plugin, $name, $description, $aliases);
 	}
 
 	/** @param array<array-key, mixed> $args */
@@ -31,38 +41,34 @@ class AcceptSubCommand extends BaseSubCommand{
 			return;
 		}
 
-		$config = $this->plugin->getConfig();
-
-		$sessionManager = $this->plugin->getSessionManager();
 		if(!$sender instanceof Player){
 			throw new AssumptionFailedError(InGameRequiredConstraint::class . ' should have prevented this');
 		}
-		$session = $sessionManager->get($senderUUID = $sender->getUniqueId()->getBytes());
+		$session = $this->sessionManager->get($senderUUID = $sender->getUniqueId()->getBytes());
 		if($session === null){
-			$sessionManager->add($sender);
-			$session = $sessionManager->get($senderUUID);
+			$this->sessionManager->add($sender);
+			$session = $this->sessionManager->get($senderUUID);
 		}
 
 		if(!$session->hasInvite($playerUUID = $player->getUniqueId()->getBytes())){
-			$sender->sendMessage($config->getNested('request.invite.playerNotFound'));
+			$sender->sendMessage($this->config->getNested('request.invite.playerNotFound'));
 			return;
 		}
 
 		$arena = $session->getInvite($playerUUID);
-		$gameManager = $this->plugin->getGameManager();
-		if($gameManager->has($arena->getName())){
-			$sender->sendMessage($config->getNested('match.inUse'));
+		if($this->gameManager->has($arena->getName())){
+			$sender->sendMessage($this->config->getNested('match.inUse'));
 			return;
 		}
 
 		if($session->getGame() !== null){
-			$sender->sendMessage($config->getNested('request.invite.playerInDuel'));
+			$sender->sendMessage($this->config->getNested('request.invite.playerInDuel'));
 			return;
 		}
 
-		$gameManager->add(new Game($arena, [$session, $sessionManager->get($playerUUID)]));
+		$this->gameManager->add(new Game($arena, [$session, $this->sessionManager->get($playerUUID)]));
 
-		$sender->sendMessage(str_replace('{player}', $player->getDisplayName(), $config->getNested('request.accept.success')));
+		$sender->sendMessage(str_replace('{player}', $player->getDisplayName(), $this->config->getNested('request.accept.success')));
 	}
 
 	public function prepare(): void{

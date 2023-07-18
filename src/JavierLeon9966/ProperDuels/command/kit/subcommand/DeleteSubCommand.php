@@ -7,27 +7,27 @@ namespace JavierLeon9966\ProperDuels\command\kit\subcommand;
 use CortexPE\Commando\args\RawStringArgument;
 use CortexPE\Commando\BaseSubCommand;
 
-use JavierLeon9966\ProperDuels\ProperDuels;
+use JavierLeon9966\ProperDuels\kit\KitManager;
 
 use pocketmine\command\CommandSender;
+use pocketmine\plugin\PluginBase;
 use pocketmine\utils\TextFormat;
 
 class DeleteSubCommand extends BaseSubCommand{
 
 	/** @param list<string> $aliases */
-	public function __construct(private readonly ProperDuels $plugin, string $name, string $description = "", array $aliases = []){
-		parent::__construct($name, $description, $aliases);
+	public function __construct(PluginBase $plugin, string $name, private readonly KitManager $kitManager, string $description = "", array $aliases = []){
+		parent::__construct($plugin, $name, $description, $aliases);
 	}
 
 	/** @param array<array-key, mixed> $args */
 	public function onRun(CommandSender $sender, string $aliasUsed, array $args): void{
-		$kitManager = $this->plugin->getKitManager();
-		if(!$kitManager->has($args['kit'])){
+		if(!$this->kitManager->has($args['kit'])){
 			$sender->sendMessage(TextFormat::RED."No kit was found by the name '$args[kit]'");
 			return;
 		}
 
-		$kitManager->remove($args['kit']);
+		$this->kitManager->remove($args['kit']);
 		$sender->sendMessage("Removed kit '$args[kit]' successfully");
 	}
 
