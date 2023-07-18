@@ -107,7 +107,7 @@ final class Game{
 				$attr->resetToDefault();
 			}
 
-			$player->setImmobile();
+			$player->setNoClientPredictions();
 		}
 
 		ProperDuels::getInstance()->getScheduler()->scheduleRepeatingTask(new ClosureTask(function() use($config): void{
@@ -126,7 +126,7 @@ final class Game{
 				foreach($this->sessions as $session){
 					$player = $session->getPlayer();
 
-					$player->setImmobile(false);
+					$player->setNoClientPredictions(false);
 
 					$player->sendMessage($config->getNested('match.start'));
 				}
