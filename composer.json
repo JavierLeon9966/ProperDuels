@@ -5,32 +5,24 @@
   "description": "A properly made duels plugin for PocketMine-MP",
   "type": "project",
   "license": "GPL-3.0-only",
+  "scripts": {
+    "build": "php -dphar.readonly=0 vendor/bin/pharynx -i=. -c -p=ProperDuels.phar"
+  },
   "require": {
     "pocketmine/pocketmine-mp": "^5.0.0",
     "sof3/libasynql": "^4.2.0",
-    "muqsit/simple-packet-handler": "dev-pm5",
-    "paroxity/commando": "master"
+    "cortexpe/commando": "dev-fork"
   },
   "require-dev": {
+    "sof3/pharynx": "^0.3.0",
     "phpstan/phpstan": "^1.2.0",
     "phpstan/phpstan-strict-rules": "^1.0",
     "phpstan/extension-installer": "^1.0"
   },
   "repositories": [
     {
-      "type": "package",
-      "package": {
-        "name": "paroxity/commando",
-        "version": "master",
-        "autoload": {
-          "classmap": ["src/"]
-        },
-        "source": {
-          "url": "https://github.com/paroxity/commando",
-          "type": "git",
-          "reference": "master"
-        }
-      }
+      "type": "vcs",
+      "url": "https://github.com/javierleon9966/commando"
     }
   ],
   "autoload": {
