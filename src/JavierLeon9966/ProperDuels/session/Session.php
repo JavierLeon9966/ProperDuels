@@ -5,69 +5,78 @@ declare(strict_types = 1);
 namespace JavierLeon9966\ProperDuels\session;
 
 use JavierLeon9966\ProperDuels\arena\Arena;
-use JavierLeon9966\ProperDuels\invite\Invite;
+use JavierLeon9966\ProperDuels\arena\ArenaManager;
+use JavierLeon9966\ProperDuels\config\Config;
 use JavierLeon9966\ProperDuels\game\Game;
-use JavierLeon9966\ProperDuels\ProperDuels;
-
+use JavierLeon9966\ProperDuels\game\GameManager;
+use JavierLeon9966\ProperDuels\invite\Invite;
 use pocketmine\player\Player;
-use pocketmine\utils\TextFormat;
+use pocketmine\plugin\Plugin;
+use pocketmine\plugin\PluginManager;
+use pocketmine\Server;
+use pocketmine\utils\AssumptionFailedError;
+use SOFe\InfoAPI\InfoAPI;
 
 final class Session{
-	/**
-	 * @var Invite[]
-	 * @phpstan-var array<string, Invite>
-	 */
-	private $invites = [];
+	/** @phpstan-var array<string, Invite> */
+	private array $invites = [];
 
-	private $game = null;
+	private ?Game $game = null;
 
-	private $player;
+	private SessionInfo $info;
 
-	private $info;
-
-	public function __construct(Player $player){
-		$this->player = $player;
+	public function __construct(
+		private readonly ArenaManager $arenaManager,
+		private readonly GameManager $gameManager,
+		private readonly Config $config,
+		private readonly Plugin $plugin,
+		private readonly PluginManager $pluginManager,
+		private readonly Player $player
+	){
 		$this->saveInfo();
 	}
 
 	public function addInvite(Session $session, ?Arena $arena): void{
-		$properDuels = ProperDuels::getInstance();
-		$arenaManager = $properDuels->getArenaManager();
-		if($this->game !== null or $session->getGame() !== null or $arena === null and count($arenaManager->all()) === 0){
+		if($this->game !== null or $session->getGame() !== null or $arena === null and count($this->arenaManager->all()) === 0){
 			return;
 		}
 
-		$gameManager = $properDuels->getGameManager();
-		$arena = $arena ?? $arenaManager->get(array_rand(count($gameManager->all()) === 0 ? $arenaManager->all() : array_udiff(
-			$arenaManager->all(),
-			$gameManager->all(),
-			static function(Arena $a, Game $b): int{
-				return strcasecmp($a->getName(), $b->getArena()->getName());
+		$arena = $arena ?? $this->arenaManager->get(array_rand(count($this->gameManager->all()) === 0 ? $this->arenaManager->all() : array_udiff(
+			$this->arenaManager->all(),
+			$this->gameManager->all(),
+			static function(Arena|Game $a, Arena|Game $b): int{
+				return strcasecmp(($a instanceof Arena ? $a : $a->getArena())->getName(), ($b instanceof Arena ? $b : $b->getArena())->getName());
 			}
-		)));
-
-		$config = $properDuels->getConfig();
+		))) ?? throw new AssumptionFailedError('This should never happen');
 
 		$player = $session->getPlayer();
 
-		if($gameManager->has($arena->getName())){
-			$player->sendMessage($config->getNested('match.inUse'));
+		if($this->gameManager->has($arena->getName())){
+			$player->sendMessage(InfoAPI::render($this->plugin, $this->config->match->inUse, [], $player));
 			return;
 		}
 
-		$time = $config->getNested('request.expire.time');
-		$player->sendMessage(str_replace(
-			['{player}', '{arena}', '{seconds}'],
-			[$this->player->getDisplayName(), $arena->getName(), (string)$time],
-			$config->getNested('request.invite.success')
-		));
-		$this->player->sendMessage(str_replace(
-			['{player}', '{arena}', '{seconds}'],
-			[$player->getDisplayName(), $arena->getName(), (string)$time],
-			$config->getNested('request.invite.message')
-		));
+		$time = $this->config->request->expire->time;
+		$player->sendMessage(InfoAPI::render($this->plugin, $this->config->request->invite->success, [
+			'player' => $this->player,
+			'arena' => $arena,
+			'seconds' => $time
+		], $player));
+		$this->player->sendMessage(InfoAPI::render($this->plugin, $this->config->request->invite->message, [
+			'player' => $player,
+			'arena' => $arena,
+			'seconds' => $time,
+		], $this->player));
 
-		$this->invites[$player->getUniqueId()->getBytes()] = new Invite($arena, $this, $session, (int)(20 * $time));
+		$this->invites[$player->getUniqueId()->getBytes()] = new Invite(
+			$this->config,
+			$this->plugin,
+			$arena,
+			$this,
+			$session,
+			$this->pluginManager,
+			Server::TARGET_TICKS_PER_SECOND * $time
+		);
 	}
 
 	public function getInfo(): SessionInfo{

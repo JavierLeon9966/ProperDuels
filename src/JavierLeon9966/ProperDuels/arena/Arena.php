@@ -8,22 +8,12 @@ use pocketmine\math\Vector3;
 
 final class Arena{
 
-	private $name;
+	private Vector3 $firstSpawnPos;
+	private Vector3 $secondSpawnPos;
 
-	private $levelName;
-
-	private $firstSpawnPos;
-	private $secondSpawnPos;
-
-	private $kit = null;
-
-	public function __construct(string $name, string $levelName, Vector3 $firstSpawnPos, Vector3 $secondSpawnPos, ?string $kit = null){
+	public function __construct(private readonly string $name, private readonly string $levelName, Vector3 $firstSpawnPos, Vector3 $secondSpawnPos, private readonly ?string $kit = null){
 		$this->firstSpawnPos = clone $firstSpawnPos;
 		$this->secondSpawnPos = clone $secondSpawnPos;
-
-		$this->name = $name;
-		$this->levelName = $levelName;
-		$this->kit = $kit;
 	}
 
 	public function getFirstSpawnPos(): Vector3{

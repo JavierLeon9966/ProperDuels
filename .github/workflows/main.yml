@@ -1,0 +1,57 @@
+name: CI
+on:
+  - push
+  - pull_request
+jobs:
+  phpstan:
+    name: PHPStan Analyze
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        php:
+          - "8.3"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: pmmp/setup-php-action@2.0.0
+        with:
+          php-version: ${{ matrix.php }}
+          install-path: "../bin"
+          pm-version-major: "5"
+      - name: Restore Composer package cache
+        id: composer-cache
+        uses: actions/cache@v3
+        with:
+          path: "~/.cache/composer"
+          key: "php-${{ matrix.php }}-composer-${{ hashFiles('**/composer.json') }}"
+          restore-keys: "php-${{ matrix.php }}-composer-"
+
+      - name: Install PHPStan Composer dependencies
+        working-directory: ./
+        run: composer install --prefer-dist --no-interaction
+
+      - name: Run PHPStan
+        working-directory: ./
+        run: vendor/bin/phpstan analyze
+  pharynx:
+    name: build phar
+    permissions:
+      contents: write
+    runs-on: ubuntu-20.04
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    strategy:
+      matrix:
+        php:
+          - "8.3"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: pmmp/setup-php-action@2.0.0
+        with:
+          php-version: ${{ matrix.php }}
+          install-path: "../bin"
+          pm-version-major: "5"
+      - uses: SOF3/pharynx@v0.2
+        id: pharynx
+      - uses: actions/upload-artifact@v3
+        with:
+          name: plugin.phar
+          path: ${{steps.pharynx.outputs.output-phar}}

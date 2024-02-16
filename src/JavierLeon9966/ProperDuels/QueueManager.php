@@ -5,26 +5,51 @@ declare(strict_types = 1);
 namespace JavierLeon9966\ProperDuels;
 
 use JavierLeon9966\ProperDuels\arena\Arena;
+use JavierLeon9966\ProperDuels\arena\ArenaManager;
+use JavierLeon9966\ProperDuels\config\Config;
 use JavierLeon9966\ProperDuels\game\Game;
-
-use pocketmine\item\Item;
-use pocketmine\math\Vector3;
+use JavierLeon9966\ProperDuels\game\GameManager;
+use JavierLeon9966\ProperDuels\kit\KitManager;
+use JavierLeon9966\ProperDuels\session\SessionManager;
+use LogicException;
+use pocketmine\plugin\Plugin;
+use pocketmine\utils\AssumptionFailedError;
+use pocketmine\world\WorldManager;
+use const SORT_REGULAR;
 
 final class QueueManager{
 
-	private $queues = [];
+	/** @var array<string, Arena> */
+	private array $queues = [];
 
+	public function __construct(
+		private readonly ArenaManager $arenaManager,
+		private readonly GameManager $gameManager,
+		private readonly SessionManager $sessionManager,
+		private readonly KitManager $kitManager,
+		private readonly WorldManager $worldManager,
+		private readonly Plugin $plugin,
+		private readonly Config $config,
+	){
+	}
+
+	/**
+	 * @throws \LogicException
+	 * @throws \RuntimeException
+	 */
 	public function add(string $rawUUID, ?Arena $arena = null): void{
-		$arenaManager = ProperDuels::getInstance()->getArenaManager();
-		$arenas = $arenaManager->all();
+		$arenas = $this->arenaManager->all();
 		if(count($arenas) === 0){
-			throw new \LogicException("There are no existing arenas");
+			throw new LogicException('There are no existing arenas');
 		}
-		$this->queues[$rawUUID] = $arena ?? (count($this->queues) === 0 ? $arenaManager->get(array_rand($arenas)) : $this->queues[array_rand($this->queues)]);
+		$this->queues[$rawUUID] = $arena ?? (count($this->queues) === 0 ?
+			$this->arenaManager->get(array_rand($arenas)) ?? throw new AssumptionFailedError('This should never happen ') :
+			$this->queues[array_rand($this->queues)]);
 
 		$this->update();
 	}
 
+	/** @return array<string, Arena> */
 	public function all(): array{
 		return $this->queues;
 	}
@@ -41,14 +66,16 @@ final class QueueManager{
 		unset($this->queues[$rawUUID]);
 	}
 
+	/** @throws \RuntimeException */
 	public function update(): void{
-		$properDuels = ProperDuels::getInstance();
-		$gameManager = $properDuels->getGameManager();
-		foreach(array_unique($this->queues, \SORT_REGULAR) as $arena){
-			if(!$gameManager->has($arena->getName())){
+		foreach(array_unique($this->queues, SORT_REGULAR) as $arena){
+			if(!$this->gameManager->has($arena->getName())){
 				$sessions = [];
 				foreach(array_slice(array_keys($this->queues, $arena, true), 0, 2) as $rawUUID){
-					$session = $properDuels->getSessionManager()->get($rawUUID);
+					if(!is_string($rawUUID)){
+						throw new AssumptionFailedError('This should never happen');
+					}
+					$session = $this->sessionManager->get($rawUUID);
 					if($session === null){
 						unset($this->queues[$rawUUID]);
 						continue 2;
@@ -57,8 +84,17 @@ final class QueueManager{
 					$sessions[] = $session;
 				}
 
-				if(count($sessions) > 1){
-					$gameManager->add(new Game($arena, $sessions));
+				if(count($sessions) === 2){
+					$this->gameManager->add(new Game(
+						$this->config,
+						$this->gameManager,
+						$this->kitManager,
+						$this->worldManager,
+						$this,
+						$this->plugin,
+						$arena,
+						[$sessions[0], $sessions[1]]
+					));
 				}
 			}
 		}

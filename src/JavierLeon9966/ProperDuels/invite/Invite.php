@@ -5,12 +5,16 @@ declare(strict_types = 1);
 namespace JavierLeon9966\ProperDuels\invite;
 
 use JavierLeon9966\ProperDuels\arena\Arena;
-use JavierLeon9966\ProperDuels\ProperDuels;
+use JavierLeon9966\ProperDuels\config\Config;
 use JavierLeon9966\ProperDuels\session\Session;
-
 use pocketmine\event\HandlerListManager;
+use pocketmine\plugin\Plugin;
+use pocketmine\plugin\PluginException;
+use pocketmine\plugin\PluginManager;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\scheduler\TaskHandler;
+use pocketmine\utils\AssumptionFailedError;
+use SOFe\InfoAPI\InfoAPI;
 
 final class Invite{
 
@@ -18,17 +22,23 @@ final class Invite{
 	private InviteListener $listener;
 
 	public function __construct(
-		private Arena $arena,
-		private Session $invited,
-		private Session $inviter,
-		int $time
+		private readonly Config $config,
+		private readonly Plugin $plugin,
+		private readonly Arena   $arena,
+		private readonly Session $invited,
+		private readonly Session $inviter,
+		PluginManager $pluginManager,
+		int                      $time
 	){
-		$properDuels = ProperDuels::getInstance();
 		if($time > 0){
-			$this->task = $properDuels->getScheduler()->scheduleDelayedTask(new ClosureTask(fn() => $this->expire()), $time);
+			$this->task = $plugin->getScheduler()->scheduleDelayedTask(new ClosureTask($this->expire(...)), $time);
 		}
 		$this->listener = new InviteListener($this);
-		$properDuels->getServer()->getPluginManager()->registerEvents($this->listener, $properDuels);
+		try{
+			$pluginManager->registerEvents($this->listener, $plugin);
+		}catch(PluginException $e){
+			throw new AssumptionFailedError('This should never happen', 0, $e);
+		}
 	}
 
 	public function getArena(): Arena{
@@ -40,19 +50,16 @@ final class Invite{
 	}
 
 	public function expire(): void{
-		$config = ProperDuels::getInstance()->getConfig();
-		$this->inviter->getPlayer()->sendMessage(str_replace(
-			'{player}',
-			$this->invited->getPlayer()->getDisplayName(),
-			$config->getNested('request.expire.to')
-		));
-		$this->invited->getPlayer()->sendMessage(str_replace(
-			'{player}',
-			$this->inviter->getPlayer()->getDisplayName(),
-			$config->getNested('request.expire.from')
-		));
+		$inviterP = $this->inviter->getPlayer();
+		$invitedP = $this->invited->getPlayer();
+		$inviterP->sendMessage(InfoAPI::render($this->plugin, $this->config->request->expire->to, [
+			'player' => $invitedP
+		], $inviterP));
+		$invitedP->sendMessage(InfoAPI::render($this->plugin, $this->config->request->expire->from, [
+			'player' => $inviterP
+		], $invitedP));
 		
-		$this->invited->removeInvite($this->inviter->getPlayer()->getUniqueId()->getBytes());
+		$this->invited->removeInvite($inviterP->getUniqueId()->getBytes());
 	}
 
 	public function close(): void{

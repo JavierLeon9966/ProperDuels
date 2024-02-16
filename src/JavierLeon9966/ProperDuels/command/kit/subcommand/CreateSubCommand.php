@@ -7,24 +7,24 @@ namespace JavierLeon9966\ProperDuels\command\kit\subcommand;
 use CortexPE\Commando\args\RawStringArgument;
 use CortexPE\Commando\BaseSubCommand;
 use CortexPE\Commando\constraint\InGameRequiredConstraint;
-
+use CortexPE\Commando\exception\ArgumentOrderException;
 use JavierLeon9966\ProperDuels\kit\Kit;
 use JavierLeon9966\ProperDuels\kit\KitManager;
-
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
-use pocketmine\utils\{AssumptionFailedError, TextFormat};
 use pocketmine\plugin\PluginBase;
+use pocketmine\utils\{AssumptionFailedError, TextFormat};
 
 class CreateSubCommand extends BaseSubCommand{
 
 	/** @param list<string> $aliases */
-	public function __construct(PluginBase $plugin, string $name, private readonly KitManager $kitManager, string $description = "", array $aliases = []){
+	public function __construct(PluginBase $plugin, string $name, private readonly KitManager $kitManager, string $description = '', array $aliases = []){
 		parent::__construct($plugin, $name, $description, $aliases);
 	}
 
 	/** @param array<array-key, mixed> $args */
 	public function onRun(CommandSender $sender, string $aliasUsed, array $args): void{
+		/** @var array{'kit': string} $args */
 		if($this->kitManager->has($args['kit'])){
 			$sender->sendMessage(TextFormat::RED."A kit with the name '$args[kit]' already exists");
 			return;
@@ -46,6 +46,10 @@ class CreateSubCommand extends BaseSubCommand{
 
 		$this->setPermission('properduels.command.kit.create');
 
-		$this->registerArgument(0, new RawStringArgument('kit'));
+		try{
+			$this->registerArgument(0, new RawStringArgument('kit'));
+		}catch(ArgumentOrderException $e){
+			throw new AssumptionFailedError('This should never happen', 0, $e);
+		}
 	}
 }

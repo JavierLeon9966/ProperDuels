@@ -1,4 +1,15 @@
 parameters:
 	level: 9
+	checkTooWideReturnTypesInProtectedAndPublicMethods: true
+	checkMissingCallableSignature: true
+	checkUninitializedProperties: true
+	checkImplicitMixed: true
+	checkBenevolentUnionTypes: true
+	exceptions:
+		check:
+			missingCheckedExceptionInThrows: true
+			tooWideThrowType: true
+		uncheckedExceptionClasses:
+			- 'Error'
 	paths:
 		- src

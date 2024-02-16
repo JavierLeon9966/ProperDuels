@@ -7,16 +7,19 @@ namespace JavierLeon9966\ProperDuels\command\duel\subcommand;
 use CortexPE\Commando\args\RawStringArgument;
 use CortexPE\Commando\BaseSubCommand;
 use CortexPE\Commando\constraint\InGameRequiredConstraint;
-
+use CortexPE\Commando\exception\ArgumentOrderException;
+use JavierLeon9966\ProperDuels\config\Config;
 use JavierLeon9966\ProperDuels\game\Game;
 use JavierLeon9966\ProperDuels\game\GameManager;
-
+use JavierLeon9966\ProperDuels\kit\KitManager;
+use JavierLeon9966\ProperDuels\QueueManager;
 use JavierLeon9966\ProperDuels\session\SessionManager;
 use pocketmine\command\CommandSender;
 use pocketmine\lang\KnownTranslationFactory;
 use pocketmine\player\Player;
-use pocketmine\utils\{AssumptionFailedError, Config, TextFormat};
 use pocketmine\plugin\PluginBase;
+use pocketmine\utils\{AssumptionFailedError, TextFormat};
+use SOFe\InfoAPI\InfoAPI;
 
 class AcceptSubCommand extends BaseSubCommand{
 
@@ -27,15 +30,23 @@ class AcceptSubCommand extends BaseSubCommand{
 		private readonly Config $config,
 		private readonly SessionManager $sessionManager,
 		private readonly GameManager $gameManager,
-		string $description = "",
+		private readonly KitManager $kitManager,
+		private readonly QueueManager $queueManager,
+		string $description = '',
 		array $aliases = []
 	){
 		parent::__construct($plugin, $name, $description, $aliases);
 	}
 
-	/** @param array<array-key, mixed> $args */
-	public function onRun(CommandSender $sender, string $commandLabel, array $args): void{
-		$player = $sender->getServer()->getPlayerByPrefix($args['player']);
+	/**
+	 * @param array<array-key, mixed> $args
+	 *
+	 * @throws \RuntimeException
+	 */
+	public function onRun(CommandSender $sender, string $aliasUsed, array $args): void{
+		/** @var array{player: string} $args */
+		$server = $sender->getServer();
+		$player = $server->getPlayerExact($args['player']);
 		if($player === null){
 			$sender->sendMessage(KnownTranslationFactory::commands_generic_player_notFound()->prefix(TextFormat::RED));
 			return;
@@ -44,31 +55,32 @@ class AcceptSubCommand extends BaseSubCommand{
 		if(!$sender instanceof Player){
 			throw new AssumptionFailedError(InGameRequiredConstraint::class . ' should have prevented this');
 		}
-		$session = $this->sessionManager->get($senderUUID = $sender->getUniqueId()->getBytes());
-		if($session === null){
-			$this->sessionManager->add($sender);
-			$session = $this->sessionManager->get($senderUUID);
-		}
+		$session = $this->sessionManager->get($sender->getUniqueId()->getBytes())
+			?? throw new AssumptionFailedError('This should not be null at this point');
 
-		if(!$session->hasInvite($playerUUID = $player->getUniqueId()->getBytes())){
-			$sender->sendMessage($this->config->getNested('request.invite.playerNotFound'));
+		$arena = $session->getInvite($playerUUID = $player->getUniqueId()->getBytes());
+		if($arena === null){
+			$sender->sendMessage(InfoAPI::render($this->plugin, $this->config->request->invite->playerNotFound, [], $sender));
 			return;
 		}
 
-		$arena = $session->getInvite($playerUUID);
 		if($this->gameManager->has($arena->getName())){
-			$sender->sendMessage($this->config->getNested('match.inUse'));
+			$sender->sendMessage(InfoAPI::render($this->plugin, $this->config->match->inUse, [], $sender));
 			return;
 		}
 
 		if($session->getGame() !== null){
-			$sender->sendMessage($this->config->getNested('request.invite.playerInDuel'));
+			$sender->sendMessage(InfoAPI::render($this->plugin, $this->config->request->invite->playerInDuel, [], $sender));
 			return;
 		}
 
-		$this->gameManager->add(new Game($arena, [$session, $this->sessionManager->get($playerUUID)]));
+		$this->gameManager->add(new Game($this->config, $this->gameManager, $this->kitManager, $server->getWorldManager(), $this->queueManager, $this->plugin, $arena, [
+			$session,
+			$this->sessionManager->get($playerUUID) ??
+				throw new AssumptionFailedError('This should not be null at this point')
+		]));
 
-		$sender->sendMessage(str_replace('{player}', $player->getDisplayName(), $this->config->getNested('request.accept.success')));
+		$sender->sendMessage(InfoAPI::render($this->plugin, $this->config->request->accept->success, ['player' => $player], $sender));
 	}
 
 	public function prepare(): void{
@@ -76,6 +88,10 @@ class AcceptSubCommand extends BaseSubCommand{
 
 		$this->setPermission('properduels.command.duel.accept');
 
-		$this->registerArgument(0, new RawStringArgument('player'));
+		try{
+			$this->registerArgument(0, new RawStringArgument('player'));
+		}catch(ArgumentOrderException $e){
+			throw new AssumptionFailedError('This should never happen', 0, $e);
+		}
 	}
 }
