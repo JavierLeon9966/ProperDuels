@@ -13,8 +13,6 @@ jobs:
       matrix:
         php:
           - "8.2"
-        assets:
-          - "icon.png"
     steps:
       - uses: actions/checkout@v3
       - uses: pmmp/setup-php-action@2.0.0
@@ -28,4 +26,4 @@ jobs:
         with:
           name: plugin.phar
           path: ${{steps.pharynx.outputs.output-phar}}
-          additional-assets: ${{ matrix.assets }}
+          additional-assets: 'icon.png'
