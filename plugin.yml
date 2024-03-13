@@ -3,7 +3,7 @@ main: JavierLeon9966\ProperDuels\ProperDuels
 author: JavierLeon9966
 version: 2.8.1
 api: 5.0.0
-mcpe-protocols: [594, 618, 622, 630, 649]
+mcpe-protocols: [594, 618, 622, 630, 649, 662]
 description: A properly made duels plugin for PocketMine-MP
 website: https://github.com/JavierLeon9966/ProperDuels
 permissions:
