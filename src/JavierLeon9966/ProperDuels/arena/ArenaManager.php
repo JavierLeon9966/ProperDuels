@@ -5,7 +5,7 @@ declare(strict_types = 1);
 namespace JavierLeon9966\ProperDuels\arena;
 
 use pocketmine\math\Vector3;
-use JavierLeon9966\ProperDuels\libs\_db4403b1a7f63e34\poggit\libasynql\base\DataConnectorImpl;
+use JavierLeon9966\ProperDuels\libs\_932519f2234d1e3a\poggit\libasynql\base\DataConnectorImpl;
 
 final class ArenaManager{
 
