@@ -22,6 +22,9 @@ jobs:
           pm-version-major: "5"
       - uses: SOF3/pharynx@v0.2
         id: pharynx
+        with:
+          additional-assets: |
+            icon.png
       - uses: actions/upload-artifact@v3
         with:
           name: plugin.phar
