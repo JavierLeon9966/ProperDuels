@@ -1,7 +1,7 @@
 name: ProperDuels
 main: JavierLeon9966\ProperDuels\ProperDuels
 author: JavierLeon9966
-version: 2.9.0
+version: 2.10.0
 api: 5.0.0
 mcpe-protocols: [594, 618, 622, 630, 649, 662, 671]
 description: A properly made duels plugin for PocketMine-MP
