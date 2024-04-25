@@ -4,8 +4,8 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels\command\arena\subcommand;
 
-use JavierLeon9966\ProperDuels\libs\_932519f2234d1e3a\CortexPE\Commando\args\RawStringArgument;
-use JavierLeon9966\ProperDuels\libs\_932519f2234d1e3a\CortexPE\Commando\BaseSubCommand;
+use JavierLeon9966\ProperDuels\libs\_488821ee8c1f9ac5\CortexPE\Commando\args\RawStringArgument;
+use JavierLeon9966\ProperDuels\libs\_488821ee8c1f9ac5\CortexPE\Commando\BaseSubCommand;
 
 use JavierLeon9966\ProperDuels\arena\ArenaManager;
 
