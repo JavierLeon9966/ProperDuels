@@ -15,21 +15,10 @@ final class ArenaManager{
 	public function __construct(private readonly DataConnector $database){
 		$this->database->executeGeneric('properduels.init.arenas', [], function(): void{
 			$this->database->executeSelect('properduels.load.arenas', [], function(array $arenas): void{
-				/** @var list<array{'Arena': string, 'Name'?: string}>|list<array{'Name': string, 'LevelName': string, 'FirstSpawnPosX': float, 'FirstSpawnPosY': float, 'FirstSpawnPosZ': float, 'SecondSpawnPosX': float, 'SecondSpawnPosY': float, 'SecondSpawnPosZ': float, 'Kit': ?string}> $arenas */
+				/** @var list<array{'Name': string, 'LevelName': string, 'FirstSpawnPosX': float, 'FirstSpawnPosY': float, 'FirstSpawnPosZ': float, 'SecondSpawnPosX': float, 'SecondSpawnPosY': float, 'SecondSpawnPosZ': float, 'Kit': ?string}> $arenas */
 				if(count($arenas) === 0){
 					return;
 
-				}
-				if(isset($arenas[0]['Arena'])){
-					/** @var array<string, Arena> $unserializedArenas */
-					$unserializedArenas = array_map('unserialize', array_column($arenas, 'Arena', 'Name'));
-					$this->arenas = $unserializedArenas;
-					$this->database->executeGeneric('properduels.reset.arenas', [], function(): void{
-						foreach($this->arenas as $arena){
-							$this->add($arena);
-						}
-					});
-					return;
 				}
 
 				/**

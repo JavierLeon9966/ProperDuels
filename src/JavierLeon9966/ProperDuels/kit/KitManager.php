@@ -5,7 +5,6 @@ declare(strict_types = 1);
 namespace JavierLeon9966\ProperDuels\kit;
 
 use JavierLeon9966\ProperDuels\utils\ContentsSerializer;
-use pocketmine\utils\AssumptionFailedError;
 use poggit\libasynql\DataConnector;
 
 final class KitManager{
@@ -16,23 +15,8 @@ final class KitManager{
 	public function __construct(private readonly DataConnector $database){
 		$this->database->executeGeneric('properduels.init.kits', [], function(): void{
 			$this->database->executeSelect('properduels.load.kits', [], function(array $kits): void{
-				/** @var list<array{Name: string, Kit: string}|array{Name: string, Armor: string, Inventory: string}> $kits */
+				/** @var list<array{Name: string, Armor: string, Inventory: string}> $kits */
 				if(count($kits) === 0){
-					return;
-				}
-				if(isset($kits[0]['Kit'])){
-					$this->kits = array_map(static function(string $serialized): Kit{
-						$deserialized = unserialize($serialized);
-						if(!$deserialized instanceof Kit){
-							throw new AssumptionFailedError('This should never happen');
-						}
-						return $deserialized;
-					}, array_column($kits, 'Kit', 'Name'));
-					$this->database->executeGeneric('properduels.reset.kits', [], function(): void{
-						foreach($this->kits as $kit){
-							$this->add($kit);
-						}
-					});
 					return;
 				}
 				/**

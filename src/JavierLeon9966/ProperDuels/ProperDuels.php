@@ -12,11 +12,14 @@ use JavierLeon9966\ProperDuels\command\arena\ArenaCommand;
 use JavierLeon9966\ProperDuels\command\duel\DuelCommand;
 use JavierLeon9966\ProperDuels\command\kit\KitCommand;
 use JavierLeon9966\ProperDuels\config\Config;
+use JavierLeon9966\ProperDuels\config\DatabaseType;
 use JavierLeon9966\ProperDuels\game\GameListener;
 use JavierLeon9966\ProperDuels\game\GameManager;
+use JavierLeon9966\ProperDuels\kit\Kit;
 use JavierLeon9966\ProperDuels\kit\KitManager;
 use JavierLeon9966\ProperDuels\session\SessionListener;
 use JavierLeon9966\ProperDuels\session\SessionManager;
+use JavierLeon9966\ProperDuels\utils\ContentsSerializer;
 use JsonException;
 use JsonMapper;
 use JsonMapper_Exception;
@@ -81,6 +84,9 @@ final class ProperDuels extends PluginBase{
 		$config->setDefaults([
 			'database' => [
 				'type' => 'sqlite3',
+				'sqlite' => [
+					'file' => 'data.sqlite'
+				],
 				'mysql' => [
 					'host' => '127.0.0.1',
 					'username' => 'ProperDuels',
@@ -153,12 +159,12 @@ final class ProperDuels extends PluginBase{
 			throw new DisablePluginException();
 		}
 		try{
-			self::$arenaManager = new ArenaManager(libasynql::create(
+			$mergedDb = libasynql::create(
 				$this,
 				[
 					'type' => $unMarshaledConfig->database->type->value,
 					'sqlite' => [
-						'file' => 'arenas.sqlite'
+						'file' => $unMarshaledConfig->database->sqlite->file
 					],
 					'mysql' => [
 						'host' => $unMarshaledConfig->database->mysql->host,
@@ -170,26 +176,144 @@ final class ProperDuels extends PluginBase{
 					'worker-limit' => $unMarshaledConfig->database->workerLimit
 				],
 				$statements
-			));
+			);
+			self::$arenaManager = new ArenaManager($mergedDb);
+			self::$kitManager = new KitManager($mergedDb);
+			if($unMarshaledConfig->database->type === DatabaseType::Sqlite3){
+				if(file_exists(Path::join($this->getDataFolder(), 'arenas.sqlite'))){
+					$arenasDb = libasynql::create(
+						$this,
+						[
+							'type' => $unMarshaledConfig->database->type->value,
+							'sqlite' => [
+								'file' => 'arenas.sqlite'
+							],
+							'mysql' => [
+								'host' => $unMarshaledConfig->database->mysql->host,
+								'username' => $unMarshaledConfig->database->mysql->username,
+								'password' => $unMarshaledConfig->database->mysql->password,
+								'schema' => $unMarshaledConfig->database->mysql->schema,
+								'port' => $unMarshaledConfig->database->mysql->port
+							],
+							'worker-limit' => $unMarshaledConfig->database->workerLimit
+						],
+						$statements
+					);
 
-			self::$kitManager = new KitManager(libasynql::create(
-				$this,
-				[
-					'type' => $unMarshaledConfig->database->type->value,
-					'sqlite' => [
-						'file' => 'kits.sqlite'
-					],
-					'mysql' => [
-						'host' => $unMarshaledConfig->database->mysql->host,
-						'username' => $unMarshaledConfig->database->mysql->username,
-						'password' => $unMarshaledConfig->database->mysql->password,
-						'schema' => $unMarshaledConfig->database->mysql->schema,
-						'port' => $unMarshaledConfig->database->mysql->port
-					],
-					'worker-limit' => $unMarshaledConfig->database->workerLimit
-				],
-				$statements
-			));
+					$arenasDb->executeSelect('properduels.load.arenas', [], function(array $arenas) use (
+						$arenasDb
+					): void{
+						try{
+							/** @var list<array{'Arena': string, 'Name'?: string}>|list<array{'Name': string, 'LevelName': string, 'FirstSpawnPosX': float, 'FirstSpawnPosY': float, 'FirstSpawnPosZ': float, 'SecondSpawnPosX': float, 'SecondSpawnPosY': float, 'SecondSpawnPosZ': float, 'Kit': ?string}> $arenas */
+							if(count($arenas) === 0){
+								return;
+
+							}
+							if(isset($arenas[0]['Arena'])){
+								/** @var array<string, Arena> $unserializedArenas */
+								$unserializedArenas = array_map('unserialize', array_column($arenas, 'Arena', 'Name'));
+								foreach($unserializedArenas as $arena){
+									self::$arenaManager->add($arena);
+								}
+								return;
+							}
+
+							/**
+							 * @var string $name
+							 * @var string $levelName
+							 * @var float $firstSpawnPosX
+							 * @var float $firstSpawnPosY
+							 * @var float $firstSpawnPosZ
+							 * @var float $secondSpawnPosX
+							 * @var float $secondSpawnPosY
+							 * @var float $secondSpawnPosZ
+							 * @var ?string $kit
+							 */
+							foreach($arenas as ['Name' => $name,
+								'LevelName' => $levelName,
+								'FirstSpawnPosX' => $firstSpawnPosX,
+								'FirstSpawnPosY' => $firstSpawnPosY,
+								'FirstSpawnPosZ' => $firstSpawnPosZ,
+								'SecondSpawnPosX' => $secondSpawnPosX,
+								'SecondSpawnPosY' => $secondSpawnPosY,
+								'SecondSpawnPosZ' => $secondSpawnPosZ,
+								'Kit' => $kit]){
+								self::$arenaManager->add(new Arena(
+									$name,
+									$levelName,
+									new Vector3($firstSpawnPosX, $firstSpawnPosY, $firstSpawnPosZ),
+									new Vector3($secondSpawnPosX, $secondSpawnPosY, $secondSpawnPosZ),
+									$kit
+								));
+							}
+						}finally{
+							$arenasDb->close();
+							unlink(Path::join($this->getDataFolder(), 'arenas.sqlite'));
+						}
+					});
+					$arenasDb->waitAll();
+				}
+				if(file_exists(Path::join($this->getDataFolder(), 'kits.sqlite'))){
+					$kitsDb = libasynql::create(
+						$this,
+						[
+							'type' => $unMarshaledConfig->database->type->value,
+							'sqlite' => [
+								'file' => 'kits.sqlite'
+							],
+							'mysql' => [
+								'host' => $unMarshaledConfig->database->mysql->host,
+								'username' => $unMarshaledConfig->database->mysql->username,
+								'password' => $unMarshaledConfig->database->mysql->password,
+								'schema' => $unMarshaledConfig->database->mysql->schema,
+								'port' => $unMarshaledConfig->database->mysql->port
+							],
+							'worker-limit' => $unMarshaledConfig->database->workerLimit
+						],
+						$statements
+					);
+
+					$kitsDb->executeSelect('properduels.load.kits', [], function(array $kits) use (
+						$kitsDb
+					): void{
+						try{
+							/** @var list<array{Name: string, Kit: string}|array{Name: string, Armor: string, Inventory: string}> $kits */
+							if(count($kits) === 0){
+								return;
+							}
+							if(isset($kits[0]['Kit'])){
+								$kits = array_map(static function(string $serialized): Kit{
+									$deserialized = unserialize($serialized);
+									if(!$deserialized instanceof Kit){
+										throw new AssumptionFailedError('This should never happen');
+									}
+									return $deserialized;
+								}, array_column($kits, 'Kit', 'Name'));
+								foreach($kits as $kit){
+									self::$kitManager->add($kit);
+								}
+								return;
+							}
+							/**
+							 * @var string $name
+							 * @var string $serializedArmor
+							 * @var string $serializedInventory
+							 */
+							foreach($kits as ['Name' => $name, 'Armor' => $serializedArmor, 'Inventory' => $serializedInventory]){
+								$armorContents = ContentsSerializer::deserializeItemContents($serializedArmor);
+								$inventoryContents = ContentsSerializer::deserializeItemContents($serializedInventory);
+								self::$kitManager->add(new Kit($name, $armorContents, $inventoryContents));
+							}
+						}finally{
+							$kitsDb->close();
+							unlink(Path::join($this->getDataFolder(), 'kits.sqlite'));
+						}
+					});
+					$kitsDb->waitAll();
+				}
+				$mergedDb->waitAll();
+				$this->getLogger()->notice('Migrated arenas and kits from old database.');
+			}
 		}catch(ExtensionMissingException|SqlError $e){
 			$this->getLogger()->error($e->getMessage());
 			throw new DisablePluginException;
