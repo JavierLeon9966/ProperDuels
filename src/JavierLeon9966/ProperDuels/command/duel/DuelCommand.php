@@ -5,21 +5,22 @@ declare(strict_types = 1);
 namespace JavierLeon9966\ProperDuels\command\duel;
 
 use CortexPE\Commando\args\RawStringArgument;
-use CortexPE\Commando\constraint\InGameRequiredConstraint;
 use CortexPE\Commando\BaseCommand;
-
-use JavierLeon9966\ProperDuels\command\duel\subcommand\{AcceptSubCommand, DenySubCommand, QueueSubCommand};
+use CortexPE\Commando\constraint\InGameRequiredConstraint;
+use CortexPE\Commando\exception\ArgumentOrderException;
 use JavierLeon9966\ProperDuels\arena\ArenaManager;
+use JavierLeon9966\ProperDuels\command\duel\subcommand\{AcceptSubCommand, DenySubCommand, QueueSubCommand};
+use JavierLeon9966\ProperDuels\config\Config;
 use JavierLeon9966\ProperDuels\game\GameManager;
-use JavierLeon9966\ProperDuels\ProperDuels;
-
+use JavierLeon9966\ProperDuels\kit\KitManager;
 use JavierLeon9966\ProperDuels\QueueManager;
 use JavierLeon9966\ProperDuels\session\SessionManager;
 use pocketmine\command\CommandSender;
 use pocketmine\lang\KnownTranslationFactory;
 use pocketmine\player\Player;
-use pocketmine\utils\{AssumptionFailedError, Config, TextFormat};
 use pocketmine\plugin\PluginBase;
+use pocketmine\utils\{AssumptionFailedError, TextFormat};
+use SOFe\InfoAPI\InfoAPI;
 
 class DuelCommand extends BaseCommand{
 
@@ -31,54 +32,51 @@ class DuelCommand extends BaseCommand{
 		private readonly GameManager $gameManager,
 		private readonly ArenaManager $arenaManager,
 		private readonly QueueManager $queueManager,
-		string $description = "",
+		private readonly KitManager $kitManager,
+		string $description = '',
 		array $aliases = []
 	){
 		parent::__construct($plugin, $name, $description, $aliases);
 	}
 
 	/** @param array<array-key, mixed> $args */
-	public function onRun(CommandSender $sender, string $commandLabel, array $args): void{
-		$plugin = $this->getOwningPlugin();
-		assert($plugin instanceof ProperDuels);
-		$config = $plugin->getConfig();
-		
-		$player = $sender->getServer()->getPlayerByPrefix($args['player']);
+	public function onRun(CommandSender $sender, string $aliasUsed, array $args): void{
+		/** @var array{'player': string, 'arena'?: string} $args */
+
+		$player = $sender->getServer()->getPlayerExact($args['player']);
 		if($player === null){
 			$sender->sendMessage(KnownTranslationFactory::commands_generic_player_notFound()->prefix(TextFormat::RED));
 			return;
 		}elseif($player === $sender){
-			$sender->sendMessage($config->getNested('request.invite.sameTarget'));
+			$sender->sendMessage(InfoAPI::render($this->plugin, $this->config->request->invite->sameTarget, [], $sender));
 			return;
 		}
 
-		$sessionManager = $plugin->getSessionManager();
 		if(!$sender instanceof Player){
 			throw new AssumptionFailedError(InGameRequiredConstraint::class . ' should have prevented this');
 		}
-		$session = $sessionManager->get($playerUUID = $player->getUniqueId()->getBytes());
-		if($session === null){
-			$sessionManager->add($player);
-			$session = $sessionManager->get($playerUUID);
-		}
+		$session = $this->sessionManager->get($player->getUniqueId()->getBytes())
+			?? throw new AssumptionFailedError('This should not be null at this point');
 		
 		if($session->hasInvite($rawUUID = $sender->getUniqueId()->getBytes())){
-			$sender->sendMessage($config->getNested('request.invite.failure'));
+			$sender->sendMessage(InfoAPI::render($this->plugin, $this->config->request->invite->failure, [], $sender));
 			return;
 		}
-		
-		$arenaManager = $plugin->getArenaManager();
-		if(isset($args['arena']) and !$arenaManager->has($args['arena'])){
+		if(isset($args['arena']) and !$this->arenaManager->has($args['arena'])){
 			$sender->sendMessage(TextFormat::RED."No arena was found by the name '$args[arena]'");
 			return;
 		}
 		
 		if($session->getGame() !== null){
-			$sender->sendMessage($plugin->getConfig()->getNested('request.invite.playerInDuel'));
+			$sender->sendMessage(InfoAPI::render($this->plugin, $this->config->request->invite->playerInDuel, [], $sender));
 			return;
 		}
 		
-		$session->addInvite($sessionManager->get($rawUUID), isset($args['arena']) ? $arenaManager->get($args['arena']) : null);
+		$session->addInvite(
+		$this->sessionManager->get($rawUUID)
+				?? throw new AssumptionFailedError('This should not be null at this point'),
+			isset($args['arena']) ? $this->arenaManager->get($args['arena']) : null
+		);
 	}
 
 	public function prepare(): void{
@@ -90,12 +88,16 @@ class DuelCommand extends BaseCommand{
 			'properduels.command.duel.queue'
 		]);
 
-		$this->registerArgument(0, new RawStringArgument('player'));
-		$this->registerArgument(1, new RawStringArgument('arena', true));
+		try{
+			$this->registerArgument(0, new RawStringArgument('player'));
+			$this->registerArgument(1, new RawStringArgument('arena', true));
+		}catch(ArgumentOrderException $e){
+			throw new AssumptionFailedError('This should never happen', 0, $e);
+		}
 
 		$plugin = $this->getOwningPlugin();
-		assert($plugin instanceof ProperDuels);
-		$this->registerSubCommand(new AcceptSubCommand($plugin, 'accept', $this->config, $this->sessionManager, $this->gameManager));
+		assert($plugin instanceof PluginBase);
+		$this->registerSubCommand(new AcceptSubCommand($plugin, 'accept', $this->config, $this->sessionManager, $this->gameManager, $this->kitManager, $this->queueManager));
 		$this->registerSubCommand(new DenySubCommand($plugin, 'deny', $this->config, $this->sessionManager));
 		$this->registerSubCommand(new QueueSubCommand($plugin, 'queue', $this->arenaManager, $this->queueManager));
 	}

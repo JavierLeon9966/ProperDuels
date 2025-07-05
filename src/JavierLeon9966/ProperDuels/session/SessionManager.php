@@ -4,22 +4,39 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels\session;
 
-use JavierLeon9966\ProperDuels\ProperDuels;
-
+use JavierLeon9966\ProperDuels\arena\ArenaManager;
+use JavierLeon9966\ProperDuels\config\Config;
+use JavierLeon9966\ProperDuels\game\GameManager;
 use pocketmine\player\Player;
+use pocketmine\plugin\Plugin;
+use pocketmine\plugin\PluginManager;
 
 final class SessionManager{
 
-	private $sessions = [];
+	/** @var array<string, Session> */
+	private array $sessions = [];
 
-	public function __construct(ProperDuels $plugin){
-		$plugin->getServer()->getPluginManager()->registerEvents(new SessionListener, $plugin);
+	public function __construct(
+		private readonly ArenaManager $arenaManager,
+		private readonly GameManager $gameManager,
+		private readonly Config $config,
+		private readonly Plugin $plugin,
+		private readonly PluginManager $pluginManager
+	){
 	}
 
 	public function add(Player $player): void{
-		$this->sessions[$player->getUniqueId()->getBytes()] = new Session($player);
+		$this->sessions[$player->getUniqueId()->getBytes()] = new Session(
+			$this->arenaManager,
+			$this->gameManager,
+			$this->config,
+			$this->plugin,
+			$this->pluginManager,
+			$player
+		);
 	}
 
+	/** @return array<string, Session> */
 	public function all(): array{
 		return $this->sessions;
 	}

@@ -4,24 +4,28 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels\game;
 
-use JavierLeon9966\ProperDuels\ProperDuels;
-
+use InvalidArgumentException;
+use JavierLeon9966\ProperDuels\config\Config;
+use JavierLeon9966\ProperDuels\session\SessionManager;
 use pocketmine\event\Listener;
 use pocketmine\event\player\{PlayerDeathEvent, PlayerQuitEvent};
 use pocketmine\event\server\CommandEvent;
 use pocketmine\player\Player;
+use pocketmine\utils\AssumptionFailedError;
 use pocketmine\utils\TextFormat;
 
-final class GameListener implements Listener{
+final readonly class GameListener implements Listener{
+
+	public function __construct(private Config $config, private SessionManager $sessionManager){
+	}
 
 	/**
 	 * @priority HIGHEST
 	 */
 	public function onCommandEvent(CommandEvent $event): void{
-		$properDuels = ProperDuels::getInstance();
 		$player = $event->getSender();
-		if($player instanceof Player && !$properDuels->getConfig()->getNested('match.allow-commands')){
-			$session = $properDuels->getSessionManager()->get($player->getUniqueId()->getBytes());
+		if($player instanceof Player && !$this->config->match->allowCommands){
+			$session = $this->sessionManager->get($player->getUniqueId()->getBytes());
 			if($session !== null){
 				$game = $session->getGame();
 				if($game !== null){
@@ -35,30 +39,36 @@ final class GameListener implements Listener{
 
 	/**
 	 * @priority HIGHEST
+	 *
+	 * @throws \RuntimeException
 	 */
 	public function onPlayerDeath(PlayerDeathEvent $event): void{
-		$session = ProperDuels::getInstance()->getSessionManager()->get($event->getPlayer()->getUniqueId()->getBytes());
+		$session = $this->sessionManager->get($event->getPlayer()->getUniqueId()->getBytes());
 		if($session !== null){
 			$game = $session->getGame();
 			if($game !== null){
 				$game->stop($session);
 
 				$event->setKeepInventory(true);
-				$event->setXpDropAmount(0);
+				try{
+					$event->setXpDropAmount(0);
+				}catch(InvalidArgumentException $e){
+					throw new AssumptionFailedError('This should never happen', 0, $e);
+				}
 			}
 		}
 	}
 
 	/**
 	 * @priority LOWEST
+	 *
+	 * @throws \RuntimeException
 	 */
 	public function onPlayerQuit(PlayerQuitEvent $event): void{
-		$session = ProperDuels::getInstance()->getSessionManager()->get($event->getPlayer()->getUniqueId()->getBytes());
+		$session = $this->sessionManager->get($event->getPlayer()->getUniqueId()->getBytes());
 		if($session !== null){
 			$game = $session->getGame();
-			if($game !== null){
-				$game->stop($session);
-			}
+			$game?->stop($session);
 		}
 	}
 }

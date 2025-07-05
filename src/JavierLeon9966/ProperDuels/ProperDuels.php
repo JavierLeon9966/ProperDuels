@@ -4,64 +4,80 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels;
 
+use CortexPE\Commando\exception\HookAlreadyRegistered;
 use CortexPE\Commando\PacketHooker;
-
+use JavierLeon9966\ProperDuels\arena\Arena;
 use JavierLeon9966\ProperDuels\arena\ArenaManager;
 use JavierLeon9966\ProperDuels\command\arena\ArenaCommand;
 use JavierLeon9966\ProperDuels\command\duel\DuelCommand;
 use JavierLeon9966\ProperDuels\command\kit\KitCommand;
+use JavierLeon9966\ProperDuels\config\Config;
+use JavierLeon9966\ProperDuels\game\GameListener;
 use JavierLeon9966\ProperDuels\game\GameManager;
 use JavierLeon9966\ProperDuels\kit\KitManager;
+use JavierLeon9966\ProperDuels\session\SessionListener;
 use JavierLeon9966\ProperDuels\session\SessionManager;
-
-use poggit\libasynql\libasynql;
-
+use JsonException;
+use JsonMapper;
+use JsonMapper_Exception;
+use pocketmine\command\CommandSender;
+use pocketmine\math\Vector3;
+use pocketmine\plugin\DisablePluginException;
 use pocketmine\plugin\PluginBase;
-use pocketmine\utils\TextFormat;
-
+use pocketmine\plugin\PluginException;
+use pocketmine\utils\AssumptionFailedError;
+use pocketmine\utils\ConfigLoadException;
+use poggit\libasynql\ExtensionMissingException;
+use poggit\libasynql\libasynql;
+use poggit\libasynql\SqlError;
+use SOFe\InfoAPI\InfoAPI;
 use Symfony\Component\Filesystem\Path;
 
 final class ProperDuels extends PluginBase{
-	private static $instance = null;
 
-	private $arenaManager;
+	private static ArenaManager $arenaManager;
 
-	private $kitManager;
+	private static KitManager $kitManager;
 
-	private $gameManager = null;
+	private static GameManager $gameManager;
 
-	private $queueManager;
+	private static QueueManager $queueManager;
 
-	private $sessionManager = null;
+	private static SessionManager $sessionManager;
 
-	public static function getInstance(): ?self{
-		return self::$instance;
+	public static function getArenaManager(): ArenaManager{
+		return self::$arenaManager;
 	}
 
-	public function getArenaManager(): ArenaManager{
-		return $this->arenaManager;
+	public static function getGameManager(): GameManager{
+		return self::$gameManager;
 	}
 
-	public function getGameManager(): ?GameManager{
-		return $this->gameManager;
+	public static function getKitManager(): KitManager{
+		return self::$kitManager;
 	}
 
-	public function getKitManager(): KitManager{
-		return $this->kitManager;
+	public static function getQueueManager(): QueueManager{
+		return self::$queueManager;
 	}
 
-	public function getQueueManager(): QueueManager{
-		return $this->queueManager;
+	public static function getSessionManager(): SessionManager{
+		return self::$sessionManager;
 	}
 
-	public function getSessionManager(): ?SessionManager{
-		return $this->sessionManager;
-	}
+	/** @throws DisablePluginException */
+	public function onEnable(): void{
+		InfoAPI::addKind($this, 'properduels/arena', static fn(Arena $arena, ?CommandSender $sender): string => $arena->getName(), 'Arena', 'A duel arena');
+		InfoAPI::addMapping($this, ['firstSpawnPosition', 'firstSpawnPos'], static fn(Arena $arena): Vector3 => $arena->getFirstSpawnPos(), help: 'Arena first spawn position');
+		InfoAPI::addMapping($this, ['secondSpawnPosition', 'secondSpawnPos'], static fn(Arena $arena): Vector3 => $arena->getSecondSpawnPos(), help: 'Arena second spawn position');
+		InfoAPI::addMapping($this, 'kit', static fn(Arena $arena): string => $arena->getKit() ?? 'Random', help: 'Arena kit');
 
-	public function onLoad(): void{
-		self::$instance = $this;
-
-		$config = $this->getConfig();
+		try{
+			$config = $this->getConfig();
+		}catch(ConfigLoadException $e){
+			$this->getLogger()->error($e->getMessage());
+			throw new DisablePluginException();
+		}
 		$config->setDefaults([
 			'database' => [
 				'type' => 'sqlite3',
@@ -77,108 +93,183 @@ final class ProperDuels extends PluginBase{
 			'match' => [
 				'allow-commands' => false,
 				'countdown' => [
-					'message' => TextFormat::AQUA.'Match starting in '.TextFormat::BLUE.'{seconds}',
+					'message' => '{aqua}Match starting in {blue}{seconds}',
 					'time' => 5
 				],
 				'failure' => [
-					'levelNotFound' => TextFormat::RED.'Couldn\'t start match as no level was found',
-					'kitNotFound' => TextFormat::RED.'Couldn\'t start match as no kit was found'
+					'levelNotFound' => '{red}Couldn\'t start match as no level was found',
+					'kitNotFound' => '{red}Couldn\'t start match as no kit was found'
 				],
-				'finish' => TextFormat::GREEN.'{winner}'.TextFormat::GRAY.' won a match against '.TextFormat::RED.'{defeated}'.TextFormat::GRAY.' with type '.TextFormat::BLUE.'{arena}',
-				'inUse' => TextFormat::RED.'There is currently a match in that arena!',
-				'start' => TextFormat::GREEN.'Duel!'
+				'finish' => '{green}{winner}{gray} won a match against {red}{defeated}{gray} with type {blue}{arena}',
+				'inUse' => '{red}There is currently a match in that arena!',
+				'start' => '{green}Duel!'
 			],
 			'request' => [
 				'accept' => [
-					'message' => '{player} '.TextFormat::GREEN.'accepted the Duel request!',
-					'playerInDuel' => TextFormat::RED.'You cannot accept this player to a Duel!',
-					'success' => TextFormat::GREEN.'You accepted '.TextFormat::RESET.'{player}'.TextFormat::GREEN.'\'s Duel request!'
+					'message' => '{player} {green}accepted the Duel request!',
+					'playerInDuel' => '{red}You cannot accept this player to a Duel!',
+					'success' => '{green}You accepted {white}{player}{green}\'s Duel request!'
 				],
 				'deny' => [
-					'message' => '{player} '.TextFormat::RED.'denied the Duel request!',
-					'success' => TextFormat::RED.'You denied '.TextFormat::RESET.'{player}'.TextFormat::RED.'\'s Duel request!'
+					'message' => '{player} {red}denied the Duel request!',
+					'success' => '{red}You denied {white}{player}{red}\'s Duel request!'
 				],
 				'expire' => [
-					'from' => TextFormat::YELLOW.'The Duel request from '.TextFormat::RESET.'{player}'.TextFormat::YELLOW.' has expired.',
-					'to' => TextFormat::YELLOW.'The Duel request to '.TextFormat::RESET.'{player}'.TextFormat::YELLOW.' has expired.',
+					'from' => '{yellow}The Duel request from {white}{player}{yellow} has expired.',
+					'to' => '{yellow}The Duel request to {white}{player}{yellow} has expired.',
 					'time' => 60
 				],
 				'invite' => [
-					'failure' => TextFormat::RED.'You have already invited to Duel!',
-					'message' => '{player}'.TextFormat::AQUA.' has invited you to {arena} Duels! You have {seconds} seconds to accept.',
-					'playerInDuel' => TextFormat::RED.'You cannot invite this player to a Duel!',
-					'playerNotFound' => TextFormat::RED.'You haven\'t been invited to Duel, or the invitation has expired!',
-					'sameTarget' => TextFormat::RED.'You can\'t send a invite to yourself!',
-					'success' => TextFormat::YELLOW.'You invited '.TextFormat::RESET.'{player}'.TextFormat::YELLOW.' to {arena} Duels! They have {seconds} seconds to accept.'
+					'failure' => '{red}You have already invited to Duel!',
+					'message' => '{player}{aqua} has invited you to {arena} Duels! You have {seconds} seconds to accept.',
+					'playerInDuel' => '{red}You cannot invite this player to a Duel!',
+					'playerNotFound' => '{red}You haven\'t been invited to Duel, or the invitation has expired!',
+					'sameTarget' => '{red}You can\'t send a invite to yourself!',
+					'success' => '{yellow}You invited {white}{player}{yellow} to {arena} Duels! They have {seconds} seconds to accept.'
 				]
 			]
 		]);
-		$config->save();
+		try{
+			if($config->hasChanged()){
+				$config->save();
+			}
+		}catch(JsonException $e){
+			throw new AssumptionFailedError('This should never happen', 0, $e);
+		}
 
 		$statements = [
 			'sqlite' => Path::join('sqlite', 'stmt.sql'),
 			'mysql' => Path::join('mysql', 'stmt.sql')
 		];
 
-		$databaseConfig = $config->get('database');
-		$arenaData = $databaseConfig;
-		$arenaData['sqlite']['file'] = 'arenas.sqlite';
-		$this->arenaManager = new ArenaManager(libasynql::create(
+		$mapper = new JsonMapper();
+		$mapper->bEnforceMapType = false;
+		$mapper->bExceptionOnUndefinedProperty = true;
+		try{
+			/** @var Config $unMarshaledConfig */
+			$unMarshaledConfig = $mapper->map($config->getAll(), Config::class);
+		}catch(JsonMapper_Exception $e){
+			$this->getLogger()->error("Configuration error: {$e->getMessage()}");
+			throw new DisablePluginException();
+		}
+		try{
+			self::$arenaManager = new ArenaManager(libasynql::create(
+				$this,
+				[
+					'type' => $unMarshaledConfig->database->type->value,
+					'sqlite' => [
+						'file' => 'arenas.sqlite'
+					],
+					'mysql' => [
+						'host' => $unMarshaledConfig->database->mysql->host,
+						'username' => $unMarshaledConfig->database->mysql->username,
+						'password' => $unMarshaledConfig->database->mysql->password,
+						'schema' => $unMarshaledConfig->database->mysql->schema,
+						'port' => $unMarshaledConfig->database->mysql->port
+					],
+					'worker-limit' => $unMarshaledConfig->database->workerLimit
+				],
+				$statements
+			));
+
+			self::$kitManager = new KitManager(libasynql::create(
+				$this,
+				[
+					'type' => $unMarshaledConfig->database->type->value,
+					'sqlite' => [
+						'file' => 'kits.sqlite'
+					],
+					'mysql' => [
+						'host' => $unMarshaledConfig->database->mysql->host,
+						'username' => $unMarshaledConfig->database->mysql->username,
+						'password' => $unMarshaledConfig->database->mysql->password,
+						'schema' => $unMarshaledConfig->database->mysql->schema,
+						'port' => $unMarshaledConfig->database->mysql->port
+					],
+					'worker-limit' => $unMarshaledConfig->database->workerLimit
+				],
+				$statements
+			));
+		}catch(ExtensionMissingException|SqlError $e){
+			$this->getLogger()->error($e->getMessage());
+			throw new DisablePluginException;
+		}
+
+		self::$gameManager = new GameManager();
+		$server = $this->getServer();
+		$pluginManager = $server->getPluginManager();
+		self::$sessionManager = new SessionManager(
+			self::$arenaManager,
+			self::$gameManager,
+			$unMarshaledConfig,
 			$this,
-			$arenaData,
-			$statements
-		));
-
-		$kitData = $databaseConfig;
-		$kitData['sqlite']['file'] = 'kits.sqlite';
-		$this->kitManager = new KitManager(libasynql::create(
+			$pluginManager
+		);
+		self::$queueManager = new QueueManager(
+			self::$arenaManager,
+			self::$gameManager,
+			self::$sessionManager,
+			self::$kitManager,
+			$server->getWorldManager(),
 			$this,
-			$kitData,
-			$statements
-		));
+			$unMarshaledConfig
+		);
+		try{
+			$pluginManager->registerEvents(new GameListener($unMarshaledConfig, self::$sessionManager), $this);
+			$pluginManager->registerEvents(new SessionListener(self::$sessionManager), $this);
+		}catch(PluginException $e){
+			throw new AssumptionFailedError('This should never happen', 0, $e);
+		}
 
-		$this->queueManager = new QueueManager;
+		if(!PacketHooker::isRegistered()){
+			try{
+				PacketHooker::register($this);
+			}catch(HookAlreadyRegistered $e){
+				throw new AssumptionFailedError('This should never happen', 0, $e);
+			}
+		}
 
-	}
-
-	public function onEnable(): void{
-		if(!PacketHooker::isRegistered()) PacketHooker::register($this);
-
-		$this->gameManager = $gameManager = new GameManager($this);
-		$this->sessionManager = new SessionManager($this);
-		$this->getServer()->getCommandMap()->registerAll('properduels', [
+		$server->getCommandMap()->registerAll('properduels', [
 			new ArenaCommand(
 				$this,
 				'arena',
-				$this->arenaManager,
-				$this->kitManager,
+				self::$arenaManager,
+				self::$kitManager,
 				'Manage arenas for duel matches.'
 			),
 			new DuelCommand(
 				$this,
 				'duel',
-				$this->getConfig(),
-				$this->sessionManager,
-				$gameManager,
-				$this->arenaManager,
-				$this->queueManager,
+				$unMarshaledConfig,
+				self::$sessionManager,
+				self::$gameManager,
+				self::$arenaManager,
+				self::$queueManager,
+				self::$kitManager,
 				'Duel players and queue to a match.'
 			),
 			new KitCommand(
 				$this,
 				'kit',
-				$this->kitManager,
+				self::$kitManager,
 				'Manage kits for duel matches.'
 			)
 		]);
 	}
 
+	/** @throws \RuntimeException */
 	public function onDisable(): void{
-		self::$instance = null;
-
-		$this->arenaManager->close();
-		$this->kitManager->close();
-		$this->gameManager->close();
-		$this->sessionManager->close();
+		if(isset(self::$arenaManager)){
+			self::$arenaManager->close();
+		}
+		if(isset(self::$kitManager)){
+			self::$kitManager->close();
+		}
+		if(isset(self::$gameManager)){
+			self::$gameManager->close();
+		}
+		if(isset(self::$sessionManager)){
+			self::$sessionManager->close();
+		}
 	}
 }

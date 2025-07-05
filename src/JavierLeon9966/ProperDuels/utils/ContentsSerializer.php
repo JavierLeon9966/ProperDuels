@@ -1,10 +1,13 @@
 <?php
+declare(strict_types=1);
 
 namespace JavierLeon9966\ProperDuels\utils;
 
-use JavierLeon9966\ProperDuels\kit\Kit;
+use pocketmine\data\bedrock\item\ItemTypeDeserializeException;
+use pocketmine\data\SavedDataLoadingException;
 use pocketmine\item\Item;
 use pocketmine\nbt\LittleEndianNbtSerializer;
+use pocketmine\nbt\NbtDataException;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\ListTag;
 use pocketmine\nbt\TreeRoot;
@@ -13,7 +16,12 @@ use pocketmine\world\format\io\GlobalItemDataHandlers;
 
 class ContentsSerializer{
 
-	/** @return array<int, Item> */
+	/**
+	 * @return array<int, Item>
+	 * @throws NbtDataException
+	 * @throws SavedDataLoadingException
+	 * @throws ItemTypeDeserializeException
+	 */
 	public static function deserializeItemContents(string $serializedContents): array{
 		/** @var array<int, Item> $contents */
 		$contents = [];

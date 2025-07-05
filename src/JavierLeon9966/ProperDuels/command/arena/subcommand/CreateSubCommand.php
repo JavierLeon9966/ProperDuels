@@ -4,27 +4,28 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels\command\arena\subcommand;
 
-use JavierLeon9966\ProperDuels\arena\ArenaManager;
-use JavierLeon9966\ProperDuels\kit\KitManager;
-use pocketmine\plugin\PluginBase;
 use CortexPE\Commando\args\{RawStringArgument, Vector3Argument};
 use CortexPE\Commando\BaseSubCommand;
 use CortexPE\Commando\constraint\InGameRequiredConstraint;
-
+use CortexPE\Commando\exception\ArgumentOrderException;
 use JavierLeon9966\ProperDuels\arena\Arena;
-
+use JavierLeon9966\ProperDuels\arena\ArenaManager;
+use JavierLeon9966\ProperDuels\kit\KitManager;
 use pocketmine\command\CommandSender;
+use pocketmine\math\Vector3;
 use pocketmine\player\Player;
+use pocketmine\plugin\PluginBase;
 use pocketmine\utils\{AssumptionFailedError, TextFormat};
 
 class CreateSubCommand extends BaseSubCommand{
 
-	public function __construct(PluginBase $plugin, string $name, private readonly ArenaManager $arenaManager, private readonly KitManager $kitManager, string $description = "", array $aliases = []){
+	public function __construct(PluginBase $plugin, string $name, private readonly ArenaManager $arenaManager, private readonly KitManager $kitManager, string $description = '', array $aliases = []){
 		parent::__construct($plugin, $name, $description, $aliases);
 	}
 
 	/** @param array<array-key, mixed> $args */
 	public function onRun(CommandSender $sender, string $aliasUsed, array $args): void{
+		/** @var array{arena: string, firstSpawnPos: Vector3, secondSpawnPos: Vector3, kit?: string} $args */
 		if($this->arenaManager->has($args['arena'])){
 			$sender->sendMessage(TextFormat::RED."An arena with the name '$args[arena]' already exists");
 			return;
@@ -62,9 +63,13 @@ class CreateSubCommand extends BaseSubCommand{
 
 		$this->setPermission('properduels.command.arena.create');
 
-		$this->registerArgument(0, new RawStringArgument('arena'));
-		$this->registerArgument(1, new Vector3Argument('firstSpawnPos'));
-		$this->registerArgument(2, new Vector3Argument('secondSpawnPos'));
-		$this->registerArgument(3, new RawStringArgument('kit', true));
+		try{
+			$this->registerArgument(0, new RawStringArgument('arena'));
+			$this->registerArgument(1, new Vector3Argument('firstSpawnPos'));
+			$this->registerArgument(2, new Vector3Argument('secondSpawnPos'));
+			$this->registerArgument(3, new RawStringArgument('kit', true));
+		}catch(ArgumentOrderException $e){
+			throw new AssumptionFailedError('This should never happen', 0, $e);
+		}
 	}
 }

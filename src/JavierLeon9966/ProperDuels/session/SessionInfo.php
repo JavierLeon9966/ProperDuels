@@ -9,24 +9,29 @@ use pocketmine\utils\Utils;
 
 
 final class SessionInfo{
-	private $armor;
 
-	private $inventory;
+	/** @var array<int, Item> */
+	private array $armor;
 
-	private $totalXp;
+	/** @var array<int, Item> */
+	private array $inventory;
 
-	public function __construct(array $armor, array $inventory, int $totalXp){
+	/**
+	 * @param array<int, Item> $armor
+	 * @param array<int, Item> $inventory
+	 */
+	public function __construct(array $armor, array $inventory, private readonly int $totalXp){
 		Utils::validateArrayValueType(array_merge($armor, $inventory), static function(Item $_): void{});
 		$this->armor = Utils::cloneObjectArray($armor);
 		$this->inventory = Utils::cloneObjectArray($inventory);
-
-		$this->totalXp = $totalXp;
 	}
 
+	/** @return array<int, Item> */
 	public function getArmor(): array{
 		return Utils::cloneObjectArray($this->armor);
 	}
-	
+
+	/** @return array<int, Item> */
 	public function getInventory(): array{
 		return Utils::cloneObjectArray($this->inventory);
 	}

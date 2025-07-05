@@ -6,25 +6,21 @@
   "type": "project",
   "license": "GPL-3.0-only",
   "scripts": {
-    "build": "php -dphar.readonly=0 vendor/bin/pharynx -i=. -c -p=ProperDuels.phar"
+    "build": "@php -dphar.readonly=0 vendor/bin/pharynx -i=. -c -p=ProperDuels.phar",
+    "phpstan": "@php vendor/bin/phpstan"
   },
   "require": {
     "pocketmine/pocketmine-mp": "^5.0.0",
-    "sof3/libasynql": "^4.2.0",
-    "cortexpe/commando": "dev-fork"
+    "sof3/libasynql": "^4.2.2",
+    "sof3/infoapi": "dev-master",
+    "paroxity/commando": "^3.2.1"
   },
   "require-dev": {
     "sof3/pharynx": "^0.3.0",
-    "phpstan/phpstan": "^1.2.0",
-    "phpstan/phpstan-strict-rules": "^1.0",
+    "phpstan/phpstan": "^2.0.0",
+    "phpstan/phpstan-strict-rules": "^2.0",
     "phpstan/extension-installer": "^1.0"
   },
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/javierleon9966/commando"
-    }
-  ],
   "autoload": {
     "psr-0": {
       "JavierLeon9966\\ProperDuels\\": "src"
