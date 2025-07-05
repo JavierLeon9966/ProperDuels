@@ -4,7 +4,9 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels\kit;
 
+use pocketmine\data\SavedDataLoadingException;
 use pocketmine\item\Item;
+use pocketmine\utils\AssumptionFailedError;
 use pocketmine\utils\Utils;
 
 final class Kit{
@@ -43,8 +45,12 @@ final class Kit{
 	public function __unserialize(array $data): void{
 		$itemDeserializerFunc = Item::legacyJsonDeserialize(...);
 
-		$this->armor = array_map($itemDeserializerFunc, $data['armor']);
-		$this->inventory = array_map($itemDeserializerFunc, $data['inventory']);
+		try{
+			$this->armor = array_map($itemDeserializerFunc, $data['armor']);
+			$this->inventory = array_map($itemDeserializerFunc, $data['inventory']);
+		}catch(SavedDataLoadingException $e){
+			throw new AssumptionFailedError('This should never happen', 0, $e);
+		}
 
 		$this->name = $data['name'];
 	}

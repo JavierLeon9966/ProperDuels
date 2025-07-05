@@ -18,6 +18,7 @@ use SOFe\InfoAPI\InfoAPI;
 
 final class Invite{
 
+	/** @var \pocketmine\scheduler\TaskHandler<ClosureTask>|null */
 	private ?TaskHandler $task = null;
 	private InviteListener $listener;
 

@@ -1,5 +1,5 @@
 parameters:
-	level: 9
+	level: 10
 	checkTooWideReturnTypesInProtectedAndPublicMethods: true
 	checkMissingCallableSignature: true
 	checkUninitializedProperties: true

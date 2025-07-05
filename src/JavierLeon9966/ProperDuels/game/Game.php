@@ -139,6 +139,7 @@ final class Game{
 		}
 
 		$this->plugin->getScheduler()->scheduleRepeatingTask(new ClosureTask(function(): void{
+			/** @var int $countdown */
 			static $countdown = $this->config->match->countdown->time;
 
 			if($countdown > 0 and $this->started){

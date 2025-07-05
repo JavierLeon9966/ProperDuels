@@ -6,143 +6,21 @@
   "type": "project",
   "license": "GPL-3.0-only",
   "scripts": {
-    "build": "php -dphar.readonly=0 vendor/bin/pharynx -i=. -c -p=ProperDuels.phar"
+    "build": "@php -dphar.readonly=0 vendor/bin/pharynx -i=. -c -p=ProperDuels.phar",
+    "phpstan": "@php vendor/bin/phpstan"
   },
   "require": {
-    "pocketmine/pocketmine-mp": "dev-stable",
-    "sof3/libasynql": "master",
-    "sof3/infoapi": "master",
-    "paroxity/commando": "master"
+    "pocketmine/pocketmine-mp": "^5.0.0",
+    "sof3/libasynql": "^4.2.2",
+    "sof3/infoapi": "dev-master",
+    "paroxity/commando": "^3.2.1"
   },
   "require-dev": {
     "sof3/pharynx": "^0.3.0",
-    "phpstan/phpstan": "^1.2.0",
-    "phpstan/phpstan-strict-rules": "^1.0",
+    "phpstan/phpstan": "^2.0.0",
+    "phpstan/phpstan-strict-rules": "^2.0",
     "phpstan/extension-installer": "^1.0"
   },
-  "repositories": [
-    {
-      "type": "package",
-      "package": {
-        "name": "sof3/libasynql",
-        "type": "library",
-        "require": {
-          "pocketmine/pocketmine-mp": "dev-stable",
-          "sof3/await-generator": "^2.0.0 || ^3.0.0"
-        },
-        "autoload": {
-          "psr-0": {
-            "poggit\\libasynql\\": "libasynql/src/"
-          }
-        },
-        "version": "master",
-        "source": {
-          "url": "https://github.com/poggit/libasynql",
-          "type": "git",
-          "reference": "4.2.2"
-        }
-      }
-    },
-    {
-      "type": "package",
-      "package": {
-        "name": "sof3/infoapi",
-        "type": "library",
-        "require": {
-          "pocketmine/pocketmine-mp": "dev-stable",
-          "sof3/await-generator": "^3.6.1",
-          "sof3/pmevent": "master",
-          "sof3/zleep": "master",
-          "php": "^8.1"
-        },
-        "autoload": {
-          "classmap": ["shared", "lib"]
-        },
-        "version": "master",
-        "source": {
-          "url": "https://github.com/sof3/infoapi",
-          "type": "git",
-          "reference": "master"
-        }
-      }
-    },
-    {
-      "type": "package",
-      "package": {
-        "name": "sof3/pmevent",
-        "require": {
-          "php": "^8.1.0",
-          "pocketmine/pocketmine-mp": "dev-stable",
-          "sof3/await-generator": "^3.5.2"
-        },
-        "autoload": {
-          "classmap": ["src"]
-        },
-        "version": "master",
-        "source": {
-          "url": "https://github.com/sof3/pmevent",
-          "type": "git",
-          "reference": "0.0.2"
-        }
-      }
-    },
-    {
-      "type": "package",
-      "package": {
-        "name": "sof3/zleep",
-        "require": {
-          "pocketmine/pocketmine-mp": "dev-stable",
-          "sof3/await-generator": "^3.5.2"
-        },
-        "autoload": {
-          "classmap": ["src"]
-        },
-        "version": "master",
-        "source": {
-          "url": "https://github.com/sof3/zleep",
-          "type": "git",
-          "reference": "0.1.0"
-        }
-      }
-    },
-    {
-      "type": "package",
-      "package": {
-        "name": "paroxity/commando",
-        "version": "master",
-        "require": {
-          "pocketmine/pocketmine-mp": "dev-stable",
-          "muqsit/simple-packet-handler": "master"
-        },
-        "autoload": {
-          "psr-4": {"CortexPE\\Commando\\": ["src/CortexPE/Commando/"]}
-        },
-        "source": {
-          "url": "https://github.com/javierleon9966/commando",
-          "type": "git",
-          "reference": "fork"
-        }
-      }
-    },
-    {
-      "type": "package",
-      "package": {
-        "name": "muqsit/simple-packet-handler",
-        "require": {
-          "pocketmine/pocketmine-mp": "dev-stable"
-        },
-        "autoload": {
-          "classmap": ["src"]
-        },
-        "version": "master",
-        "source": {
-          "url": "https://github.com/muqsit/simplepackethandler",
-          "type": "git",
-          "reference": "pm5"
-        }
-      }
-    }
-  ],
   "autoload": {
     "psr-0": {
       "JavierLeon9966\\ProperDuels\\": "src"

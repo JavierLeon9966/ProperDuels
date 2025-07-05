@@ -54,13 +54,11 @@ final class KitManager{
 		$name = $kit->getName();
 		$this->kits[$name] = $kit;
 
-		if(isset($this->database)){
-			$this->database->executeInsert('properduels.register.kit', [
-				'name' => $name,
-				'armor' => ContentsSerializer::serializeItemContents($kit->getArmor()),
-				'inventory' => ContentsSerializer::serializeItemContents($kit->getInventory()),
-			]);
-		}
+		$this->database->executeInsert('properduels.register.kit', [
+			'name' => $name,
+			'armor' => ContentsSerializer::serializeItemContents($kit->getArmor()),
+			'inventory' => ContentsSerializer::serializeItemContents($kit->getInventory()),
+		]);
 	}
 
 	/** @return array<string, Kit> */
@@ -84,10 +82,8 @@ final class KitManager{
 	public function remove(string $kit): void{
 		unset($this->kits[$kit]);
 
-		if(isset($this->database)){
-			$this->database->executeChange('properduels.delete.kit', [
-				'name' => $kit
-			]);
-		}
+		$this->database->executeChange('properduels.delete.kit', [
+			'name' => $kit
+		]);
 	}
 }
