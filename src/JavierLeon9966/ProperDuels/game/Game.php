@@ -5,26 +5,46 @@ declare(strict_types = 1);
 namespace JavierLeon9966\ProperDuels\game;
 
 use JavierLeon9966\ProperDuels\arena\Arena;
+use JavierLeon9966\ProperDuels\config\Config;
 use JavierLeon9966\ProperDuels\event\GameFinishEvent;
 use JavierLeon9966\ProperDuels\event\GameStartEvent;
 use JavierLeon9966\ProperDuels\event\GameStopEvent;
-use JavierLeon9966\ProperDuels\ProperDuels;
+use JavierLeon9966\ProperDuels\kit\KitManager;
+use JavierLeon9966\ProperDuels\QueueManager;
 use JavierLeon9966\ProperDuels\session\Session;
-
-use pocketmine\world\Position;
+use pocketmine\plugin\Plugin;
 use pocketmine\scheduler\{CancelTaskException, ClosureTask};
+use pocketmine\Server;
+use pocketmine\utils\AssumptionFailedError;
 use pocketmine\utils\Utils;
+use pocketmine\world\Position;
+use pocketmine\world\WorldManager;
+use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\SOFe\InfoAPI\InfoAPI;
 
 final class Game{
-	private $arena;
 
-	private $started = false;
+	private bool $started = false;
 
-	private $sessions;
+	/**
+	 * @var array<int, Session>
+	 * @phpstan-var array{0?: Session, 1?: Session}
+	 */
+	private array $sessions;
 
-	public function __construct(Arena $arena, array $sessions){
-		$this->arena = $arena;
-
+	/**
+	 * @param array<int, Session> $sessions
+	 * @phpstan-param array{Session, Session} $sessions
+	 */
+	public function __construct(
+		private readonly Config $config,
+		private readonly GameManager $gameManager,
+		private readonly KitManager $kitManager,
+		private readonly WorldManager $worldManager,
+		private readonly QueueManager $queueManager,
+		private readonly Plugin $plugin,
+		private readonly Arena $arena,
+		array $sessions
+	){
 		Utils::validateArrayValueType($sessions, static function(Session $_): void{});
 		$this->sessions = $sessions;
 	}
@@ -33,6 +53,10 @@ final class Game{
 		return $this->arena;
 	}
 
+	/**
+	 * @return array<int, Session>
+	 * @phpstan-return array{0?: Session, 1?: Session}
+	 */
 	public function getSessions(): array{
 		return $this->sessions;
 	}
@@ -41,36 +65,40 @@ final class Game{
 		return $this->started;
 	}
 
+	/** @throws \RuntimeException */
 	public function start(): void{
 		if($this->started){
 			return;
 		}
 
-		$this->sessions[1]->removeInvite($this->sessions[0]->getPlayer()->getUniqueId()->getBytes());
-		$this->sessions[0]->removeInvite($this->sessions[1]->getPlayer()->getUniqueId()->getBytes());
-
-		$properDuels = ProperDuels::getInstance();
-		$config = $properDuels->getConfig();
-		$gameManager = $properDuels->getGameManager();
-		$kitManager = $properDuels->getKitManager();
+		$secondSession = $this->sessions[1] ?? throw new AssumptionFailedError('This should never happen');
+		$firstSession = $this->sessions[0] ?? throw new AssumptionFailedError('This should never happen');
+		$secondSession->removeInvite($firstSession->getPlayer()->getUniqueId()->getBytes());
+		$firstSession->removeInvite($secondSession->getPlayer()->getUniqueId()->getBytes());
 
 		$arenaName = $this->arena->getName();
 
 		$kit = $this->arena->getKit();
-		if(($kit !== null and !$kitManager->has($kit)) or count($kitManager->all()) === 0){
-			$gameManager->remove($arenaName);
+		if(($kit !== null and !$this->kitManager->has($kit)) or count($this->kitManager->all()) === 0){
+			$this->gameManager->remove($arenaName);
 			foreach($this->sessions as $session){
-				$session->getPlayer()->sendMessage($config->getNested('match.failure.kitNotFound'));
+				$player1 = $session->getPlayer();
+				$player1->sendMessage(InfoAPI::render($this->plugin, $this->config->match->failure->kitNotFound, [
+
+				], $player1));
 			}
 			return;
 		}
-		$kit = $kitManager->get($kit !== null ? $kit : array_rand($kitManager->all()));
-		
-		$world = $properDuels->getServer()->getWorldManager()->getWorldByName($this->arena->getLevelName());
+		$kit = $this->kitManager->get($kit !== null ? $kit : array_rand($this->kitManager->all())) ?? throw new AssumptionFailedError('This should never happen');
+
+		$world = $this->worldManager->getWorldByName($this->arena->getLevelName());
 		if($world === null){
-			$gameManager->remove($arenaName);
+			$this->gameManager->remove($arenaName);
 			foreach($this->sessions as $session){
-				$session->getPlayer()->sendMessage($config->getNested('match.failure.levelNotFound'));
+				$player2 = $session->getPlayer();
+				$player2->sendMessage(InfoAPI::render($this->plugin, $this->config->match->failure->levelNotFound, [
+
+				], $player2));
 			}
 			return;
 		}
@@ -87,9 +115,9 @@ final class Game{
 			$player->removeCurrentWindow();
 			$session->saveInfo();
 
-			$properDuels->getQueueManager()->remove($player->getUniqueId()->getBytes());
+			$this->queueManager->remove($player->getUniqueId()->getBytes());
 
-			$player->teleport(array_shift($spawns));
+			$player->teleport(array_shift($spawns) ?? throw new AssumptionFailedError('This should never happen'));
 
 			$player->getArmorInventory()->setContents($kit->getArmor());
 			$player->getInventory()->setContents($kit->getInventory());
@@ -98,7 +126,7 @@ final class Game{
 
 			$player->extinguish();
 			$player->setAirSupplyTicks($player->getMaxAirSupplyTicks());
-			$player->noDamageTicks = (int)(20 * $config->getNested('match.countdown.time'));
+			$player->noDamageTicks = Server::TARGET_TICKS_PER_SECOND * $this->config->match->countdown->time;
 			
 			$player->getEffects()->clear();
 			$player->setHealth($player->getMaxHealth());
@@ -110,15 +138,16 @@ final class Game{
 			$player->setNoClientPredictions();
 		}
 
-		ProperDuels::getInstance()->getScheduler()->scheduleRepeatingTask(new ClosureTask(function() use($config): void{
-			static $countdown = null;
-			if($countdown === null){
-				$countdown = (int)$config->getNested('match.countdown.time');
-			}
+		$this->plugin->getScheduler()->scheduleRepeatingTask(new ClosureTask(function(): void{
+			/** @var int $countdown */
+			static $countdown = $this->config->match->countdown->time;
 
 			if($countdown > 0 and $this->started){
 				foreach($this->sessions as $session){
-					$session->getPlayer()->sendMessage(str_replace('{seconds}', (string)$countdown, $config->getNested('match.countdown.message')));
+					$player1 = $session->getPlayer();
+					$player1->sendMessage(InfoAPI::render($this->plugin, $this->config->match->countdown->message, [
+						'seconds'  => $countdown
+					], $player1));
 				}
 
 				--$countdown;
@@ -128,21 +157,24 @@ final class Game{
 
 					$player->setNoClientPredictions(false);
 
-					$player->sendMessage($config->getNested('match.start'));
+					$player->sendMessage(InfoAPI::render($this->plugin, $this->config->match->start, [], $player));
 				}
 				throw new CancelTaskException;
 			}
 		}), 20);
 
-		$this->started = true;
+		(new GameStartEvent($this, $firstSession->getPlayer(), $secondSession->getPlayer()))->call();
 
-		(new GameStartEvent($this, $this->sessions[0]->getPlayer(), $this->sessions[1]->getPlayer()))->call();
+		$this->started = true;
 	}
 
+	/** @throws \RuntimeException */
 	public function stop(?Session $defeated = null): void{
 		if(!$this->started){
 			return;
 		}
+
+		$this->started = false;
 
 		if($defeated === null){
 			(new GameStopEvent($this))->call();
@@ -154,9 +186,6 @@ final class Game{
 			}
 		}
 
-		$this->started = false;
-
-		$properDuels = ProperDuels::getInstance();
 
 		foreach($this->sessions as $key => $session){
 			$info = $session->getInfo();
@@ -171,11 +200,11 @@ final class Game{
 				$player->teleport($player->getSpawn());
 
 				if($defeated !== null){
-					$player->getServer()->broadcastMessage(str_replace(
-						['{winner}', '{defeated}', '{arena}'],
-						[$player->getDisplayName(), $defeated->getPlayer()->getDisplayName(), $this->arena->getName()],
-						$properDuels->getConfig()->getNested('match.finish')
-					));
+					$player->getServer()->broadcastMessage(InfoAPI::render($this->plugin, $this->config->match->finish, [
+						'winner' => $player,
+						'defeated' =>  $defeated->getPlayer(),
+						'arena' => $this->arena
+					], $player));
 				}
 			}
 
@@ -183,6 +212,6 @@ final class Game{
 			unset($this->sessions[$key]);
 		}
 
-		$properDuels->getGameManager()->remove($this->arena->getName());
+		$this->gameManager->remove($this->arena->getName());
 	}
 }

@@ -4,17 +4,17 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels\command\duel\subcommand;
 
-use JavierLeon9966\ProperDuels\libs\_488821ee8c1f9ac5\CortexPE\Commando\args\RawStringArgument;
-use JavierLeon9966\ProperDuels\libs\_488821ee8c1f9ac5\CortexPE\Commando\BaseSubCommand;
-use JavierLeon9966\ProperDuels\libs\_488821ee8c1f9ac5\CortexPE\Commando\constraint\InGameRequiredConstraint;
-
+use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\CortexPE\Commando\args\RawStringArgument;
+use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\CortexPE\Commando\BaseSubCommand;
+use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\CortexPE\Commando\constraint\InGameRequiredConstraint;
+use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\CortexPE\Commando\exception\ArgumentOrderException;
 use JavierLeon9966\ProperDuels\arena\ArenaManager;
-
 use JavierLeon9966\ProperDuels\QueueManager;
+use LogicException;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
-use pocketmine\utils\{AssumptionFailedError, TextFormat};
 use pocketmine\plugin\PluginBase;
+use pocketmine\utils\{AssumptionFailedError, TextFormat};
 
 class QueueSubCommand extends BaseSubCommand{
 
@@ -24,18 +24,23 @@ class QueueSubCommand extends BaseSubCommand{
 		string $name,
 		private readonly ArenaManager $arenaManager,
 		private readonly QueueManager $queueManager,
-		string $description = "",
+		string $description = '',
 		array $aliases = []
 	){
 		parent::__construct($plugin, $name, $description, $aliases);
 	}
 
-	/** @param array<array-key, mixed> $args */
-	public function onRun(CommandSender $sender, string $commandLabel, array $args): void{
+	/**
+	 * @param array<array-key, mixed> $args
+	 *
+	 * @throws \RuntimeException
+	 */
+	public function onRun(CommandSender $sender, string $aliasUsed, array $args): void{
 		if(!$sender instanceof Player){
 			throw new AssumptionFailedError(InGameRequiredConstraint::class . ' should have prevented this');
 		}
 		$rawUUID = $sender->getUniqueId()->getBytes();
+		/** @var array{'arena'?: string} $args */
 		if(isset($args['arena'])){
 			$arena = $this->arenaManager->get($args['arena']);
 			if($arena === null){
@@ -48,7 +53,11 @@ class QueueSubCommand extends BaseSubCommand{
 				return;
 			}
 
-			$this->queueManager->add($rawUUID, $arena);
+			try{
+				$this->queueManager->add($rawUUID, $arena);
+			}catch(LogicException $e){
+				throw new AssumptionFailedError('this should never happen', 0, $e);
+			}
 			$sender->sendMessage('Successfully added into the queue');
 			return;
 		}elseif($this->queueManager->has($rawUUID)){
@@ -61,7 +70,11 @@ class QueueSubCommand extends BaseSubCommand{
 			$sender->sendMessage(TextFormat::RED.'There are no existing arenas');
 			return;
 		}
-		$this->queueManager->add($rawUUID);
+		try{
+			$this->queueManager->add($rawUUID);
+		}catch(LogicException $e){
+			throw new AssumptionFailedError('this should never happen', 0, $e);
+		}
 		$sender->sendMessage('Successfully added into the queue');
 	}
 
@@ -70,6 +83,10 @@ class QueueSubCommand extends BaseSubCommand{
 
 		$this->setPermission('properduels.command.duel.queue');
 
-		$this->registerArgument(0, new RawStringArgument('arena', true));
+		try{
+			$this->registerArgument(0, new RawStringArgument('arena', true));
+		}catch(ArgumentOrderException $e){
+			throw new AssumptionFailedError('This should never happen', 0, $e);
+		}
 	}
 }

@@ -7,7 +7,7 @@ namespace JavierLeon9966\ProperDuels\invite;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerQuitEvent;
 
-final class InviteListener implements Listener{
+final readonly class InviteListener implements Listener{
 
 	public function __construct(
 		private Invite $invite

@@ -5,23 +5,25 @@ declare(strict_types = 1);
 namespace JavierLeon9966\ProperDuels\arena;
 
 use pocketmine\math\Vector3;
-use JavierLeon9966\ProperDuels\libs\_488821ee8c1f9ac5\poggit\libasynql\base\DataConnectorImpl;
+use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\poggit\libasynql\DataConnector;
 
 final class ArenaManager{
 
-	private $arenas = [];
+	/** @var array<string, Arena> */
+	private array $arenas = [];
 
-	private $database;
-
-	public function __construct(DataConnectorImpl $database){
-		$this->database = $database;
+	public function __construct(private readonly DataConnector $database){
 		$this->database->executeGeneric('properduels.init.arenas', [], function(): void{
 			$this->database->executeSelect('properduels.load.arenas', [], function(array $arenas): void{
+				/** @var list<array{'Arena': string, 'Name'?: string}>|list<array{'Name': string, 'LevelName': string, 'FirstSpawnPosX': float, 'FirstSpawnPosY': float, 'FirstSpawnPosZ': float, 'SecondSpawnPosX': float, 'SecondSpawnPosY': float, 'SecondSpawnPosZ': float, 'Kit': ?string}> $arenas */
 				if(count($arenas) === 0){
 					return;
+
 				}
 				if(isset($arenas[0]['Arena'])){
-					$this->arenas = array_map('unserialize', array_column($arenas, 'Arena', 'Name'));
+					/** @var array<string, Arena> $unserializedArenas */
+					$unserializedArenas = array_map('unserialize', array_column($arenas, 'Arena', 'Name'));
+					$this->arenas = $unserializedArenas;
 					$this->database->executeGeneric('properduels.reset.arenas', [], function(): void{
 						foreach($this->arenas as $arena){
 							$this->add($arena);
@@ -84,6 +86,7 @@ final class ArenaManager{
 		]);
 	}
 
+	/** @return array<string, Arena> */
 	public function all(): array{
 		return $this->arenas;
 	}

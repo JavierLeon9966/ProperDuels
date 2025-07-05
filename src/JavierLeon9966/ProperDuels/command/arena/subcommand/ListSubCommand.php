@@ -4,10 +4,8 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels\command\arena\subcommand;
 
-use JavierLeon9966\ProperDuels\libs\_488821ee8c1f9ac5\CortexPE\Commando\BaseSubCommand;
-
+use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\CortexPE\Commando\BaseSubCommand;
 use JavierLeon9966\ProperDuels\arena\ArenaManager;
-
 use pocketmine\command\CommandSender;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\TextFormat;
@@ -15,7 +13,7 @@ use pocketmine\utils\TextFormat;
 class ListSubCommand extends BaseSubCommand{
 
 	/** @param list<string> $aliases */
-	public function __construct(PluginBase $plugin, string $name, private readonly ArenaManager $arenaManager, string $description = "", array $aliases = []){
+	public function __construct(PluginBase $plugin, string $name, private readonly ArenaManager $arenaManager, string $description = '', array $aliases = []){
 		parent::__construct($plugin, $name, $description, $aliases);
 	}
 
@@ -29,7 +27,7 @@ class ListSubCommand extends BaseSubCommand{
 		}
 
 		$sender->sendMessage("There are $count arena(s):");
-		$sender->sendMessage(implode(", ", $arenas));
+		$sender->sendMessage(implode(', ', $arenas));
 	}
 
 	public function prepare(): void{

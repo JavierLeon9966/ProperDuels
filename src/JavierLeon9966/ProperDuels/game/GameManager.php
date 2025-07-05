@@ -4,23 +4,19 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels\game;
 
-use JavierLeon9966\ProperDuels\ProperDuels;
-use JavierLeon9966\ProperDuels\session\Session;
-
 final class GameManager{
 
-	private $games = [];
+	/** @var array<string, Game> */
+	private array $games = [];
 
-	public function __construct(ProperDuels $plugin){
-		$plugin->getServer()->getPluginManager()->registerEvents(new GameListener, $plugin);
-	}
-
-	public function close(){
+	/** @throws \RuntimeException */
+	public function close(): void{
 		foreach($this->games as $game){
 			$game->stop();
 		}
 	}
 
+	/** @throws \RuntimeException */
 	public function add(Game $game): void{
 		$arenaName = $game->getArena()->getName();
 		if(isset($this->games[$arenaName])){
@@ -31,6 +27,7 @@ final class GameManager{
 		$this->games[$arenaName]->start();
 	}
 
+	/** @return array<string, Game> */
 	public function all(): array{
 		return $this->games;
 	}
