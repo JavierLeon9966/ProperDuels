@@ -37,6 +37,12 @@
           "sof3/zleep": "dev-add-phpdocs",
           "php": "^8.1"
         },
+        "autoload": {
+          "classmap": ["shared", "lib"]
+        },
+        "autoload-dev": {
+          "classmap": ["tests"]
+        },
         "version": "master",
         "source": {
           "url": "https://github.com/sof3/infoapi",
