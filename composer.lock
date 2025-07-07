@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "031f15c9db119f932d9f90e0f363d146",
+    "content-hash": "25db1d1c7173835352706cb27ea742f4",
     "packages": [
         {
             "name": "adhocore/json-comment",
@@ -1154,7 +1154,18 @@
                 "sof3/pmevent": "^0.0.2",
                 "sof3/zleep": "dev-add-phpdocs"
             },
-            "type": "library"
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "shared",
+                    "lib"
+                ]
+            },
+            "autoload-dev": {
+                "classmap": [
+                    "tests"
+                ]
+            }
         },
         {
             "name": "sof3/libasynql",
