@@ -7,13 +7,16 @@ namespace JavierLeon9966\ProperDuels\command\arena;
 use CortexPE\Commando\BaseCommand;
 use JavierLeon9966\ProperDuels\arena\ArenaManager;
 use JavierLeon9966\ProperDuels\command\arena\subcommand\{CreateSubCommand, DeleteSubCommand, ListSubCommand};
-use JavierLeon9966\ProperDuels\kit\KitManager;
 use pocketmine\command\CommandSender;
 use pocketmine\plugin\PluginBase;
 
 class ArenaCommand extends BaseCommand{
 
-	public function __construct(PluginBase $plugin, string $name, private readonly ArenaManager $arenaManager, private readonly KitManager $kitManager, string $description = '', array $aliases = []){
+	public function __construct(PluginBase $plugin,
+		string $name,
+		private readonly ArenaManager $arenaManager,
+		string $description = '',
+		array $aliases = []){
 		parent::__construct($plugin, $name, $description, $aliases);
 	}
 
@@ -30,7 +33,7 @@ class ArenaCommand extends BaseCommand{
 		]);
 		$plugin = $this->getOwningPlugin();
 		assert($plugin instanceof PluginBase);
-		$this->registerSubCommand(new CreateSubCommand($plugin, 'create', $this->arenaManager, $this->kitManager));
+		$this->registerSubCommand(new CreateSubCommand($plugin, 'create', $this->arenaManager));
 		$this->registerSubCommand(new DeleteSubCommand($plugin, 'delete', $this->arenaManager));
 		$this->registerSubCommand(new ListSubCommand($plugin, 'list', $this->arenaManager));
 	}

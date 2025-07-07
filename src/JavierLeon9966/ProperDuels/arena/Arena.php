@@ -6,12 +6,12 @@ namespace JavierLeon9966\ProperDuels\arena;
 
 use pocketmine\math\Vector3;
 
-final class Arena{
+final readonly class Arena{
 
 	private Vector3 $firstSpawnPos;
 	private Vector3 $secondSpawnPos;
 
-	public function __construct(private readonly string $name, private readonly string $levelName, Vector3 $firstSpawnPos, Vector3 $secondSpawnPos, private readonly ?string $kit = null){
+	public function __construct(private string $name, private string $levelName, Vector3 $firstSpawnPos, Vector3 $secondSpawnPos, private ?string $kit = null){
 		$this->firstSpawnPos = clone $firstSpawnPos;
 		$this->secondSpawnPos = clone $secondSpawnPos;
 	}

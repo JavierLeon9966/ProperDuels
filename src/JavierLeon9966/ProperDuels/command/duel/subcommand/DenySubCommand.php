@@ -34,7 +34,6 @@ class DenySubCommand extends BaseSubCommand{
 	/** @param array<array-key, mixed> $args */
 	public function onRun(CommandSender $sender, string $aliasUsed, array $args): void{
 		/** @var array{'player': string} $args */
-
 		$player = $sender->getServer()->getPlayerExact($args['player']);
 		if($player === null){
 			$sender->sendMessage(KnownTranslationFactory::commands_generic_player_notFound()->prefix(TextFormat::RED));

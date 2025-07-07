@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fbb599df73f7b1b95ee42482d7c9787f",
+    "content-hash": "031f15c9db119f932d9f90e0f363d146",
     "packages": [
         {
             "name": "adhocore/json-comment",
@@ -1141,57 +1141,20 @@
         },
         {
             "name": "sof3/infoapi",
-            "version": "dev-master",
+            "version": "master",
             "source": {
                 "type": "git",
-                "url": "https://github.com/SOF3/InfoAPI.git",
-                "reference": "40891c93a16da918df4d93a2e16c9dc4c95fae93"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/SOF3/InfoAPI/zipball/40891c93a16da918df4d93a2e16c9dc4c95fae93",
-                "reference": "40891c93a16da918df4d93a2e16c9dc4c95fae93",
-                "shasum": ""
+                "url": "https://github.com/sof3/infoapi",
+                "reference": "master"
             },
             "require": {
                 "php": "^8.1",
                 "pocketmine/pocketmine-mp": "^5.0.0",
                 "sof3/await-generator": "^3.6.1",
                 "sof3/pmevent": "^0.0.2",
-                "sof3/zleep": "^0.1.0"
+                "sof3/zleep": "dev-add-phpdocs"
             },
-            "require-dev": {
-                "friendsofphp/php-cs-fixer": "^3.20",
-                "phpstan/extension-installer": "^1.1.0",
-                "phpstan/phpstan": "^1.10.0",
-                "phpstan/phpstan-phpunit": "^1.0.0",
-                "phpunit/phpunit": "^9.5.0",
-                "sof3/pharynx": "^0.3.4"
-            },
-            "default-branch": true,
-            "type": "library",
-            "extra": {
-                "virion": {
-                    "spec": "3.1",
-                    "namespace-root": "SOFe\\InfoAPI",
-                    "shared-namespace-root": "Shared\\SOFe\\InfoAPI"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "shared",
-                    "lib"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "Apache-2.0"
-            ],
-            "support": {
-                "issues": "https://github.com/SOF3/InfoAPI/issues",
-                "source": "https://github.com/SOF3/InfoAPI/tree/master"
-            },
-            "time": "2025-03-12T05:27:43+00:00"
+            "type": "library"
         },
         {
             "name": "sof3/libasynql",
@@ -1290,16 +1253,16 @@
         },
         {
             "name": "sof3/zleep",
-            "version": "0.1.0",
+            "version": "dev-add-phpdocs",
             "source": {
                 "type": "git",
-                "url": "https://github.com/SOF3/zleep.git",
-                "reference": "cf3c3322fe8a415b5586505f9fc1c90d00230f86"
+                "url": "https://github.com/JavierLeon9966/zleep.git",
+                "reference": "d58b54eb630db5142637388e83cb389c452d1a40"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/SOF3/zleep/zipball/cf3c3322fe8a415b5586505f9fc1c90d00230f86",
-                "reference": "cf3c3322fe8a415b5586505f9fc1c90d00230f86",
+                "url": "https://api.github.com/repos/JavierLeon9966/zleep/zipball/d58b54eb630db5142637388e83cb389c452d1a40",
+                "reference": "d58b54eb630db5142637388e83cb389c452d1a40",
                 "shasum": ""
             },
             "require": {
@@ -1323,15 +1286,21 @@
                     "src"
                 ]
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "scripts": {
+                "fmt": [
+                    "vendor/bin/php-cs-fixer fix"
+                ],
+                "analyze": [
+                    "vendor/bin/phpstan"
+                ]
+            },
             "license": [
                 "Apache-2.0"
             ],
             "support": {
-                "issues": "https://github.com/SOF3/zleep/issues",
-                "source": "https://github.com/SOF3/zleep/tree/0.1.0"
+                "source": "https://github.com/JavierLeon9966/zleep/tree/add-phpdocs"
             },
-            "time": "2023-06-16T15:26:05+00:00"
+            "time": "2025-07-07T22:29:55+00:00"
         },
         {
             "name": "symfony/filesystem",
@@ -3589,7 +3558,7 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "sof3/infoapi": 20
+        "sof3/zleep": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,

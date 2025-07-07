@@ -7,13 +7,16 @@
   "license": "GPL-3.0-only",
   "scripts": {
     "build": "@php -dphar.readonly=0 vendor/bin/pharynx -i=. -c -p=ProperDuels.phar",
-    "phpstan": "@php vendor/bin/phpstan"
+    "phpstan": "@php vendor/bin/phpstan",
+    "make-queries": "@php vendor/bin/fx.php ./src JavierLeon9966\\\\ProperDuels\\\\RawQueries --sql ./resources --struct \"final class\" --prefix properduels"
   },
   "require": {
     "pocketmine/pocketmine-mp": "^5.0.0",
     "sof3/libasynql": "^4.2.2",
-    "sof3/infoapi": "dev-master",
-    "paroxity/commando": "^3.2.1"
+    "sof3/infoapi": "master",
+    "paroxity/commando": "^3.2.1",
+    "sof3/await-generator": "^3.6.1",
+    "sof3/zleep": "dev-add-phpdocs"
   },
   "require-dev": {
     "sof3/pharynx": "^0.3.0",
@@ -21,6 +24,32 @@
     "phpstan/phpstan-strict-rules": "^2.0",
     "phpstan/extension-installer": "^1.0"
   },
+  "repositories": [
+    {
+      "type": "package",
+      "package": {
+        "name": "sof3/infoapi",
+        "type": "library",
+        "require": {
+          "pocketmine/pocketmine-mp": "^5.0.0",
+          "sof3/await-generator": "^3.6.1",
+          "sof3/pmevent": "^0.0.2",
+          "sof3/zleep": "dev-add-phpdocs",
+          "php": "^8.1"
+        },
+        "version": "master",
+        "source": {
+          "url": "https://github.com/sof3/infoapi",
+          "type": "git",
+          "reference": "master"
+        }
+      }
+    },
+    {
+      "type": "vcs",
+      "url": "https://github.com/javierleon9966/zleep"
+    }
+  ],
   "autoload": {
     "psr-0": {
       "JavierLeon9966\\ProperDuels\\": "src"

@@ -7,11 +7,14 @@ namespace JavierLeon9966\ProperDuels\command\arena\subcommand;
 use CortexPE\Commando\args\RawStringArgument;
 use CortexPE\Commando\BaseSubCommand;
 use CortexPE\Commando\exception\ArgumentOrderException;
+use Generator;
 use JavierLeon9966\ProperDuels\arena\ArenaManager;
 use pocketmine\command\CommandSender;
+use pocketmine\player\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\AssumptionFailedError;
 use pocketmine\utils\TextFormat;
+use SOFe\AwaitGenerator\Await;
 
 class DeleteSubCommand extends BaseSubCommand{
 
@@ -22,14 +25,18 @@ class DeleteSubCommand extends BaseSubCommand{
 
 	/** @param array<array-key, mixed> $args */
 	public function onRun(CommandSender $sender, string $aliasUsed, array $args): void{
-		/** @var array{arena: string} $args */
-		if(!$this->arenaManager->has($args['arena'])){
-			$sender->sendMessage(TextFormat::RED."No arena was found by the name '$args[arena]'");
-			return;
-		}
-
-		$this->arenaManager->remove($args['arena']);
-		$sender->sendMessage("Removed arena '$args[arena]' successfully");
+		Await::f2c(function() use($args, $sender): Generator{
+			/** @var array{arena: string} $args */
+			$changed = yield from $this->arenaManager->remove($args['arena']);
+			if($sender instanceof Player && !$sender->isConnected()){
+				return;
+			}
+			if(!$changed){
+				$sender->sendMessage(TextFormat::RED."No arena was found by the name '$args[arena]'");
+			}else{
+				$sender->sendMessage("Removed arena '$args[arena]' successfully");
+			}
+		});
 	}
 
 	public function prepare(): void{

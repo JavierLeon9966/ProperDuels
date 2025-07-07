@@ -5,13 +5,11 @@ declare(strict_types = 1);
 namespace JavierLeon9966\ProperDuels;
 
 use JavierLeon9966\ProperDuels\arena\Arena;
-use JavierLeon9966\ProperDuels\arena\ArenaManager;
 use JavierLeon9966\ProperDuels\config\Config;
 use JavierLeon9966\ProperDuels\game\Game;
 use JavierLeon9966\ProperDuels\game\GameManager;
 use JavierLeon9966\ProperDuels\kit\KitManager;
 use JavierLeon9966\ProperDuels\session\SessionManager;
-use LogicException;
 use pocketmine\plugin\Plugin;
 use pocketmine\utils\AssumptionFailedError;
 use pocketmine\world\WorldManager;
@@ -23,7 +21,6 @@ final class QueueManager{
 	private array $queues = [];
 
 	public function __construct(
-		private readonly ArenaManager $arenaManager,
 		private readonly GameManager $gameManager,
 		private readonly SessionManager $sessionManager,
 		private readonly KitManager $kitManager,
@@ -33,18 +30,9 @@ final class QueueManager{
 	){
 	}
 
-	/**
-	 * @throws \LogicException
-	 * @throws \RuntimeException
-	 */
-	public function add(string $rawUUID, ?Arena $arena = null): void{
-		$arenas = $this->arenaManager->all();
-		if(count($arenas) === 0){
-			throw new LogicException('There are no existing arenas');
-		}
-		$this->queues[$rawUUID] = $arena ?? (count($this->queues) === 0 ?
-			$this->arenaManager->get(array_rand($arenas)) ?? throw new AssumptionFailedError('This should never happen ') :
-			$this->queues[array_rand($this->queues)]);
+	/** @throws \RuntimeException */
+	public function add(string $rawUUID, Arena $arena): void{
+		$this->queues[$rawUUID] = $arena;
 
 		$this->update();
 	}
