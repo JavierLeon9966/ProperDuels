@@ -260,6 +260,7 @@ final class ProperDuels extends PluginBase{
 		$mapper = new JsonMapper();
 		$mapper->bEnforceMapType = false;
 		$mapper->bExceptionOnUndefinedProperty = true;
+		$mapper->bStrictObjectTypeChecking = false;
 		try{
 			/** @var Config $unMarshaledConfig */
 			$unMarshaledConfig = $mapper->map($config->getAll(), Config::class);
