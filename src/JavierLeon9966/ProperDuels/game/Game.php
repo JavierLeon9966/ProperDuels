@@ -88,6 +88,7 @@ final class Game{
 			if($world === null){
 				$this->gameManager->remove($arenaName);
 				foreach($this->sessions as $session){
+					$session->setGame(null);
 					$player2 = $session->getPlayer();
 					$player2->sendMessage(InfoAPI::render($this->plugin, $this->config->match->failure->levelNotFound, [
 
@@ -98,9 +99,13 @@ final class Game{
 
 			$kitName = $this->arena->getKit();
 			$kit = $kitName === null ? yield from $this->kitManager->getRandom() : yield from $this->kitManager->get($kitName);
+			if(!$this->started){
+				return;
+			}
 			if($kit === null){
 				$this->gameManager->remove($arenaName);
 				foreach($this->sessions as $session){
+					$session->setGame(null);
 					$player1 = $session->getPlayer();
 					$player1->sendMessage(InfoAPI::render($this->plugin, $this->config->match->failure->kitNotFound, [
 
