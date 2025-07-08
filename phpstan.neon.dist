@@ -13,3 +13,6 @@ parameters:
 			- 'Error'
 	paths:
 		- src
+	excludePaths:
+		analyse:
+			- src/JavierLeon9966/ProperDuels/RawQueries.php

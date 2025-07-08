@@ -8,6 +8,7 @@ use CortexPE\Commando\args\RawStringArgument;
 use CortexPE\Commando\BaseCommand;
 use CortexPE\Commando\constraint\InGameRequiredConstraint;
 use CortexPE\Commando\exception\ArgumentOrderException;
+use Generator;
 use JavierLeon9966\ProperDuels\arena\ArenaManager;
 use JavierLeon9966\ProperDuels\command\duel\subcommand\{AcceptSubCommand, DenySubCommand, QueueSubCommand};
 use JavierLeon9966\ProperDuels\config\Config;
@@ -20,6 +21,7 @@ use pocketmine\lang\KnownTranslationFactory;
 use pocketmine\player\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\{AssumptionFailedError, TextFormat};
+use SOFe\AwaitGenerator\Await;
 use SOFe\InfoAPI\InfoAPI;
 
 class DuelCommand extends BaseCommand{
@@ -41,42 +43,57 @@ class DuelCommand extends BaseCommand{
 
 	/** @param array<array-key, mixed> $args */
 	public function onRun(CommandSender $sender, string $aliasUsed, array $args): void{
-		/** @var array{'player': string, 'arena'?: string} $args */
-
-		$player = $sender->getServer()->getPlayerExact($args['player']);
-		if($player === null){
-			$sender->sendMessage(KnownTranslationFactory::commands_generic_player_notFound()->prefix(TextFormat::RED));
-			return;
-		}elseif($player === $sender){
-			$sender->sendMessage(InfoAPI::render($this->plugin, $this->config->request->invite->sameTarget, [], $sender));
-			return;
-		}
-
 		if(!$sender instanceof Player){
 			throw new AssumptionFailedError(InGameRequiredConstraint::class . ' should have prevented this');
 		}
-		$session = $this->sessionManager->get($player->getUniqueId()->getBytes())
-			?? throw new AssumptionFailedError('This should not be null at this point');
-		
-		if($session->hasInvite($rawUUID = $sender->getUniqueId()->getBytes())){
-			$sender->sendMessage(InfoAPI::render($this->plugin, $this->config->request->invite->failure, [], $sender));
-			return;
-		}
-		if(isset($args['arena']) and !$this->arenaManager->has($args['arena'])){
-			$sender->sendMessage(TextFormat::RED."No arena was found by the name '$args[arena]'");
-			return;
-		}
-		
-		if($session->getGame() !== null){
-			$sender->sendMessage(InfoAPI::render($this->plugin, $this->config->request->invite->playerInDuel, [], $sender));
-			return;
-		}
-		
-		$session->addInvite(
-		$this->sessionManager->get($rawUUID)
+		/** @var array{'player': string, 'arena'?: string} $args */
+		Await::f2c(function() use($args, $sender): Generator{
+			if(isset($args['arena'])){
+				$arena = yield from $this->arenaManager->get($args['arena']);
+				if(!$sender->isConnected()){
+					return;
+				}
+				if($arena === null){
+					$sender->sendMessage(TextFormat::RED."No arena was found by the name '$args[arena]'");
+					return;
+				}
+			}else{
+				$arena = yield from $this->arenaManager->getRandom();
+				if(!$sender->isConnected()){
+					return;
+				}
+				if($arena === null){
+					$sender->sendMessage(TextFormat::RED . 'There are no existing arenas');
+					return;
+				}
+			}
+			$player = $sender->getServer()->getPlayerExact($args['player']);
+			if($player === null){
+				$sender->sendMessage(KnownTranslationFactory::commands_generic_player_notFound()->prefix(TextFormat::RED));
+				return;
+			}elseif($player === $sender){
+				$sender->sendMessage(InfoAPI::render($this->plugin, $this->config->request->invite->sameTarget, [], $sender));
+				return;
+			}
+
+			$session = $this->sessionManager->get($player->getUniqueId()->getBytes())
+				?? throw new AssumptionFailedError('This should not be null at this point');
+
+			if($session->hasInvite($rawUUID = $sender->getUniqueId()->getBytes())){
+				$sender->sendMessage(InfoAPI::render($this->plugin, $this->config->request->invite->failure, [], $sender));
+				return;
+			}
+			if($session->getGame() !== null){
+				$sender->sendMessage(InfoAPI::render($this->plugin, $this->config->request->invite->playerInDuel, [], $sender));
+				return;
+			}
+
+			$session->addInvite(
+				$this->sessionManager->get($rawUUID)
 				?? throw new AssumptionFailedError('This should not be null at this point'),
-			isset($args['arena']) ? $this->arenaManager->get($args['arena']) : null
-		);
+				$arena
+			);
+		});
 	}
 
 	public function prepare(): void{

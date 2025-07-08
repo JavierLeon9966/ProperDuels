@@ -4,86 +4,121 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels\kit;
 
+use Generator;
+use JavierLeon9966\ProperDuels\config\DatabaseType;
+use JavierLeon9966\ProperDuels\RawQueries;
 use JavierLeon9966\ProperDuels\utils\ContentsSerializer;
+use pocketmine\data\bedrock\item\ItemTypeDeserializeException;
+use pocketmine\data\SavedDataLoadingException;
+use pocketmine\nbt\NbtDataException;
 use pocketmine\utils\AssumptionFailedError;
-use poggit\libasynql\DataConnector;
+use poggit\libasynql\SqlError;
+use RuntimeException;
+use SOFe\AwaitGenerator\Await;
 
-final class KitManager{
+final readonly class KitManager{
 
-	/** @var array<string, Kit> */
-	private array $kits = [];
-
-	public function __construct(private readonly DataConnector $database){
-		$this->database->executeGeneric('properduels.init.kits', [], function(): void{
-			$this->database->executeSelect('properduels.load.kits', [], function(array $kits): void{
-				/** @var list<array{Name: string, Kit: string}|array{Name: string, Armor: string, Inventory: string}> $kits */
-				if(count($kits) === 0){
-					return;
-				}
-				if(isset($kits[0]['Kit'])){
-					$this->kits = array_map(static function(string $serialized): Kit{
-						$deserialized = unserialize($serialized);
-						if(!$deserialized instanceof Kit){
-							throw new AssumptionFailedError('This should never happen');
-						}
-						return $deserialized;
-					}, array_column($kits, 'Kit', 'Name'));
-					$this->database->executeGeneric('properduels.reset.kits', [], function(): void{
-						foreach($this->kits as $kit){
-							$this->add($kit);
-						}
-					});
-					return;
-				}
-				/**
-				 * @var string $name
-				 * @var string $serializedArmor
-				 * @var string $serializedInventory
-				 */
-				foreach($kits as ['Name' => $name, 'Armor' => $serializedArmor, 'Inventory' => $serializedInventory]){
-					$armorContents = ContentsSerializer::deserializeItemContents($serializedArmor);
-					$inventoryContents = ContentsSerializer::deserializeItemContents($serializedInventory);
-					$this->kits[$name] = new Kit($name, $armorContents, $inventoryContents);
-				}
-			});
-		});
-		$this->database->waitAll();
+	private function __construct(private RawQueries $queries){
 	}
 
-	public function add(Kit $kit): void{
+	/** @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, KitManager> */
+	public static function create(RawQueries $mergedDb, DatabaseType $type): Generator{
+		$gen = $mergedDb->initKits();
+		if($type === DatabaseType::Mysql){
+			yield from $gen;
+		}else{
+			Await::g2c($gen);
+		}
+		return new self($mergedDb);
+	}
+
+	/**
+	 * @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, void>
+	 * @throws \RuntimeException
+	 */
+	public function add(Kit $kit): Generator{
 		$name = $kit->getName();
-		$this->kits[$name] = $kit;
 
-		$this->database->executeInsert('properduels.register.kit', [
-			'name' => $name,
-			'armor' => ContentsSerializer::serializeItemContents($kit->getArmor()),
-			'inventory' => ContentsSerializer::serializeItemContents($kit->getInventory()),
-		]);
+		try{
+			yield from $this->queries->registerKit(
+				$name,
+				ContentsSerializer::serializeItemContents($kit->getArmor()),
+				ContentsSerializer::serializeItemContents($kit->getInventory()),
+			);
+		}catch(SqlError $e){
+			throw new RuntimeException('Failed to register kit: ' . $e->getMessage(), 0, $e);
+		}
 	}
 
-	/** @return array<string, Kit> */
-	public function all(): array{
-		return $this->kits;
+	/** @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, ?Kit> */
+	public function get(string $kit): Generator{
+		/** @var array{0?: array{'Name': string, 'Armor': string, 'Inventory': string}} $rows */
+		$rows = yield from $this->queries->getKit($kit);
+
+		if(!isset($rows[0])){
+			return null;
+		}
+
+		$data = $rows[0];
+		try{
+			return new Kit(
+				$data['Name'],
+				ContentsSerializer::deserializeItemContents($data['Armor']),
+				ContentsSerializer::deserializeItemContents($data['Inventory'])
+			);
+		}catch(NbtDataException|SavedDataLoadingException|ItemTypeDeserializeException $e){
+			throw new AssumptionFailedError('This should never happen', 0, $e);
+		}
 	}
 
-	public function close(): void{
-		$this->database->waitAll();
-		$this->database->close();
+	/** @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, ?Kit> */
+	public function getRandom(): Generator{
+		/** @var array{0?: array{'Name': string, 'Armor': string, 'Inventory': string}} $rows */
+		$rows = yield from $this->queries->getRandomKit();
+
+		if(!isset($rows[0])){
+			return null;
+		}
+
+		$data = $rows[0];
+		try{
+			return new Kit(
+				$data['Name'],
+				ContentsSerializer::deserializeItemContents($data['Armor']),
+				ContentsSerializer::deserializeItemContents($data['Inventory'])
+			);
+		}catch(NbtDataException|SavedDataLoadingException|ItemTypeDeserializeException $e){
+			throw new AssumptionFailedError('This should never happen', 0, $e);
+		}
+	}
+	/** @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, bool> */
+	public function remove(string $kit): Generator{
+		$changedRows = yield from $this->queries->deleteKit($kit);
+		return $changedRows > 0;
 	}
 
-	public function get(string $kit): ?Kit{
-		return $this->kits[$kit] ?? null;
+	/** @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, list<Kit>> */
+	public function getList(int $offset, int $limit): Generator{
+		/** @var list<array{'Name': string, 'Armor': string, 'Inventory': string}> $rows */
+		$rows = yield from $this->queries->listKits($offset, $limit);
+
+		if(count($rows) === 0){
+			return [];
+		}
+
+		$kits = [];
+		foreach($rows as $data){
+			try{
+				$kits[] = new Kit(
+					$data['Name'],
+					ContentsSerializer::deserializeItemContents($data['Armor']),
+					ContentsSerializer::deserializeItemContents($data['Inventory'])
+				);
+			}catch(NbtDataException|SavedDataLoadingException|ItemTypeDeserializeException $e){
+				throw new AssumptionFailedError('This should never happen', 0, $e);
+			}
+		}
+		return $kits;
 	}
 
-	public function has(string $kit): bool{
-		return isset($this->kits[$kit]);
-	}
-
-	public function remove(string $kit): void{
-		unset($this->kits[$kit]);
-
-		$this->database->executeChange('properduels.delete.kit', [
-			'name' => $kit
-		]);
-	}
 }

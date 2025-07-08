@@ -9,7 +9,7 @@ use pocketmine\item\Item;
 use pocketmine\utils\AssumptionFailedError;
 use pocketmine\utils\Utils;
 
-final class Kit{
+final readonly class Kit{
 
 	/** @var array<int, Item> */
 	private array $armor;
@@ -21,7 +21,7 @@ final class Kit{
 	 * @param array<int, Item> $armor
 	 * @param array<int, Item> $inventory
 	 */
-	public function __construct(private readonly string $name, array $armor, array $inventory){
+	public function __construct(private string $name, array $armor, array $inventory){
 		Utils::validateArrayValueType(array_merge($armor, $inventory), static function(Item $_): void{});
 		$this->armor = Utils::cloneObjectArray($armor);
 		$this->inventory = Utils::cloneObjectArray($inventory);
