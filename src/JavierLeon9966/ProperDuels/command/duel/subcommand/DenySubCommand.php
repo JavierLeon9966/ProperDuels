@@ -4,10 +4,10 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels\command\duel\subcommand;
 
-use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\CortexPE\Commando\args\RawStringArgument;
-use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\CortexPE\Commando\BaseSubCommand;
-use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\CortexPE\Commando\constraint\InGameRequiredConstraint;
-use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\CortexPE\Commando\exception\ArgumentOrderException;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\CortexPE\Commando\args\RawStringArgument;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\CortexPE\Commando\BaseSubCommand;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\CortexPE\Commando\constraint\InGameRequiredConstraint;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\CortexPE\Commando\exception\ArgumentOrderException;
 use JavierLeon9966\ProperDuels\config\Config;
 use JavierLeon9966\ProperDuels\session\SessionManager;
 use pocketmine\command\CommandSender;
@@ -15,7 +15,7 @@ use pocketmine\lang\KnownTranslationFactory;
 use pocketmine\player\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\{AssumptionFailedError, TextFormat};
-use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\SOFe\InfoAPI\InfoAPI;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\SOFe\InfoAPI\InfoAPI;
 
 class DenySubCommand extends BaseSubCommand{
 
@@ -34,7 +34,6 @@ class DenySubCommand extends BaseSubCommand{
 	/** @param array<array-key, mixed> $args */
 	public function onRun(CommandSender $sender, string $aliasUsed, array $args): void{
 		/** @var array{'player': string} $args */
-
 		$player = $sender->getServer()->getPlayerExact($args['player']);
 		if($player === null){
 			$sender->sendMessage(KnownTranslationFactory::commands_generic_player_notFound()->prefix(TextFormat::RED));

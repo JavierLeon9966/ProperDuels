@@ -4,7 +4,7 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels\command\kit;
 
-use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\CortexPE\Commando\BaseCommand;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\CortexPE\Commando\BaseCommand;
 use JavierLeon9966\ProperDuels\command\kit\subcommand\{CreateSubCommand, DeleteSubCommand, ListSubCommand};
 use JavierLeon9966\ProperDuels\kit\KitManager;
 use pocketmine\command\CommandSender;

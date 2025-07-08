@@ -4,61 +4,82 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels;
 
-use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\CortexPE\Commando\exception\HookAlreadyRegistered;
-use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\CortexPE\Commando\PacketHooker;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\CortexPE\Commando\exception\HookAlreadyRegistered;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\CortexPE\Commando\PacketHooker;
+use Generator;
 use JavierLeon9966\ProperDuels\arena\Arena;
 use JavierLeon9966\ProperDuels\arena\ArenaManager;
 use JavierLeon9966\ProperDuels\command\arena\ArenaCommand;
 use JavierLeon9966\ProperDuels\command\duel\DuelCommand;
 use JavierLeon9966\ProperDuels\command\kit\KitCommand;
 use JavierLeon9966\ProperDuels\config\Config;
+use JavierLeon9966\ProperDuels\config\DatabaseType;
 use JavierLeon9966\ProperDuels\game\GameListener;
 use JavierLeon9966\ProperDuels\game\GameManager;
+use JavierLeon9966\ProperDuels\kit\Kit;
 use JavierLeon9966\ProperDuels\kit\KitManager;
 use JavierLeon9966\ProperDuels\session\SessionListener;
 use JavierLeon9966\ProperDuels\session\SessionManager;
+use JavierLeon9966\ProperDuels\utils\ContentsSerializer;
 use JsonException;
 use JsonMapper;
 use JsonMapper_Exception;
 use pocketmine\command\CommandSender;
+use pocketmine\data\bedrock\item\ItemTypeDeserializeException;
+use pocketmine\data\SavedDataLoadingException;
 use pocketmine\math\Vector3;
+use pocketmine\nbt\NbtDataException;
 use pocketmine\plugin\DisablePluginException;
 use pocketmine\plugin\PluginBase;
 use pocketmine\plugin\PluginException;
+use pocketmine\plugin\PluginManager;
+use pocketmine\Server;
 use pocketmine\utils\AssumptionFailedError;
 use pocketmine\utils\ConfigLoadException;
-use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\poggit\libasynql\ExtensionMissingException;
-use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\poggit\libasynql\libasynql;
-use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\poggit\libasynql\SqlError;
-use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\SOFe\InfoAPI\InfoAPI;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\poggit\libasynql\DataConnector;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\poggit\libasynql\ExtensionMissingException;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\poggit\libasynql\libasynql;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\poggit\libasynql\SqlError;
+use RuntimeException;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\SOFe\AwaitGenerator\Await;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\SOFe\AwaitGenerator\Loading;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\SOFe\InfoAPI\InfoAPI;
 use Symfony\Component\Filesystem\Path;
+use Throwable;
 
 final class ProperDuels extends PluginBase{
 
-	private static ArenaManager $arenaManager;
+	/** @var \SOFe\AwaitGenerator\Loading<ArenaManager> */
+	private static Loading $arenaManager;
 
-	private static KitManager $kitManager;
+	/** @var \SOFe\AwaitGenerator\Loading<KitManager> */
+	private static Loading $kitManager;
 
 	private static GameManager $gameManager;
 
-	private static QueueManager $queueManager;
+	/** @var \SOFe\AwaitGenerator\Loading<\JavierLeon9966\ProperDuels\QueueManager> */
+	private static Loading $queueManager;
 
 	private static SessionManager $sessionManager;
+	private static DataConnector $database;
 
-	public static function getArenaManager(): ArenaManager{
-		return self::$arenaManager;
+	/** @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, ArenaManager> */
+	public static function getArenaManager(): Generator{
+		return yield from self::$arenaManager->get();
 	}
 
 	public static function getGameManager(): GameManager{
 		return self::$gameManager;
 	}
 
-	public static function getKitManager(): KitManager{
-		return self::$kitManager;
+	/** @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, KitManager> */
+	public static function getKitManager(): Generator{
+		return yield from self::$kitManager->get();
 	}
 
-	public static function getQueueManager(): QueueManager{
-		return self::$queueManager;
+	/** @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, QueueManager> */
+	public static function getQueueManager(): Generator{
+		return yield from self::$queueManager->get();
 	}
 
 	public static function getSessionManager(): SessionManager{
@@ -67,11 +88,107 @@ final class ProperDuels extends PluginBase{
 
 	/** @throws DisablePluginException */
 	public function onEnable(): void{
-		InfoAPI::addKind($this, 'properduels/arena', static fn(Arena $arena, ?CommandSender $sender): string => $arena->getName(), 'Arena', 'A duel arena');
-		InfoAPI::addMapping($this, ['firstSpawnPosition', 'firstSpawnPos'], static fn(Arena $arena): Vector3 => $arena->getFirstSpawnPos(), help: 'Arena first spawn position');
-		InfoAPI::addMapping($this, ['secondSpawnPosition', 'secondSpawnPos'], static fn(Arena $arena): Vector3 => $arena->getSecondSpawnPos(), help: 'Arena second spawn position');
-		InfoAPI::addMapping($this, 'kit', static fn(Arena $arena): string => $arena->getKit() ?? 'Random', help: 'Arena kit');
+		if(!PacketHooker::isRegistered()){
+			try{
+				PacketHooker::register($this);
+			}catch(HookAlreadyRegistered $e){
+				throw new AssumptionFailedError('This should never happen', 0, $e);
+			}
+		}
+		$this->setupInfoAPI();
 
+		$unMarshaledConfig = $this->getUnMarshaledConfig();
+
+		$mergedDb = $this->getMergedDb($unMarshaledConfig);
+
+		$server = $this->getServer();
+		$pluginManager = $server->getPluginManager();
+		$this->setupManagers($mergedDb, $unMarshaledConfig, $pluginManager, $server);
+
+		try{
+			$pluginManager->registerEvents(new GameListener($unMarshaledConfig, self::$sessionManager), $this);
+			$pluginManager->registerEvents(new SessionListener(self::$sessionManager), $this);
+		}catch(PluginException $e){
+			throw new AssumptionFailedError('This should never happen', 0, $e);
+		}
+
+		Await::f2c(function() use ($server, $unMarshaledConfig): Generator{
+			/**
+			 * @var ArenaManager $arenaManager
+			 * @var KitManager $kitManager
+			 * @var QueueManager $queueManager
+			 */
+			[$arenaManager, $kitManager, $queueManager] = yield from Await::all([
+				self::$arenaManager->get(),
+				self::$kitManager->get(),
+				self::$queueManager->get()
+			]);
+
+			$server->getCommandMap()->registerAll('properduels', [
+				new ArenaCommand(
+					$this,
+					'arena',
+					$arenaManager,
+					'Manage arenas for duel matches.'
+				),
+				new DuelCommand(
+					$this,
+					'duel',
+					$unMarshaledConfig,
+					self::$sessionManager,
+					self::$gameManager,
+					$arenaManager,
+					$queueManager,
+					$kitManager,
+					'Duel players and queue to a match.'
+				),
+				new KitCommand(
+					$this,
+					'kit',
+					$kitManager,
+					'Manage kits for duel matches.'
+				)
+			]);
+
+			$this->getLogger()->info('Finished registering commands.');
+		});
+	}
+
+	/** @throws \RuntimeException */
+	public function onDisable(): void{
+		if(isset(self::$database)){
+			self::$database->waitAll();
+		}
+		if(isset(self::$gameManager)){
+			self::$gameManager->close();
+		}
+		if(isset(self::$sessionManager)){
+			self::$sessionManager->close();
+		}
+	}
+
+	private function setupInfoAPI(): void{
+		InfoAPI::addKind($this,
+			'properduels/arena',
+			static fn(Arena $arena, ?CommandSender $sender): string => $arena->getName(),
+			'Arena',
+			'A duel arena');
+		InfoAPI::addMapping($this,
+			['firstSpawnPosition', 'firstSpawnPos'],
+			static fn(Arena $arena): Vector3 => $arena->getFirstSpawnPos(),
+			help: 'Arena first spawn position');
+		InfoAPI::addMapping($this,
+			['secondSpawnPosition', 'secondSpawnPos'],
+			static fn(Arena $arena): Vector3 => $arena->getSecondSpawnPos(),
+			help: 'Arena second spawn position');
+		InfoAPI::addMapping($this,
+			'kit',
+			static fn(Arena $arena): string => $arena->getKit() ?? 'Random',
+			help: 'Arena kit');
+	}
+
+	/** @throws \pocketmine\plugin\DisablePluginException */
+	private function getUnMarshaledConfig(): Config{
 		try{
 			$config = $this->getConfig();
 		}catch(ConfigLoadException $e){
@@ -81,6 +198,9 @@ final class ProperDuels extends PluginBase{
 		$config->setDefaults([
 			'database' => [
 				'type' => 'sqlite3',
+				'sqlite' => [
+					'file' => 'data.sqlite'
+				],
 				'mysql' => [
 					'host' => '127.0.0.1',
 					'username' => 'ProperDuels',
@@ -137,14 +257,10 @@ final class ProperDuels extends PluginBase{
 			throw new AssumptionFailedError('This should never happen', 0, $e);
 		}
 
-		$statements = [
-			'sqlite' => Path::join('sqlite', 'stmt.sql'),
-			'mysql' => Path::join('mysql', 'stmt.sql')
-		];
-
 		$mapper = new JsonMapper();
 		$mapper->bEnforceMapType = false;
 		$mapper->bExceptionOnUndefinedProperty = true;
+		$mapper->bStrictObjectTypeChecking = false;
 		try{
 			/** @var Config $unMarshaledConfig */
 			$unMarshaledConfig = $mapper->map($config->getAll(), Config::class);
@@ -152,32 +268,177 @@ final class ProperDuels extends PluginBase{
 			$this->getLogger()->error("Configuration error: {$e->getMessage()}");
 			throw new DisablePluginException();
 		}
-		try{
-			self::$arenaManager = new ArenaManager(libasynql::create(
-				$this,
-				[
-					'type' => $unMarshaledConfig->database->type->value,
-					'sqlite' => [
-						'file' => 'arenas.sqlite'
-					],
-					'mysql' => [
-						'host' => $unMarshaledConfig->database->mysql->host,
-						'username' => $unMarshaledConfig->database->mysql->username,
-						'password' => $unMarshaledConfig->database->mysql->password,
-						'schema' => $unMarshaledConfig->database->mysql->schema,
-						'port' => $unMarshaledConfig->database->mysql->port
-					],
-					'worker-limit' => $unMarshaledConfig->database->workerLimit
-				],
-				$statements
-			));
+		return $unMarshaledConfig;
+	}
 
-			self::$kitManager = new KitManager(libasynql::create(
+	/**
+	 * @param array{'sqlite': string, 'mysql': string} $statements
+	 * @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, void>
+	 * @throws \poggit\libasynql\SqlError
+	 */
+	private function migrateArenasDatabase(Config $unMarshaledConfig, array $statements): Generator{
+		$arenasDb = libasynql::create(
+			$this,
+			[
+				'type' => $unMarshaledConfig->database->type->value,
+				'sqlite' => [
+					'file' => 'arenas.sqlite'
+				],
+				'mysql' => [
+					'host' => $unMarshaledConfig->database->mysql->host,
+					'username' => $unMarshaledConfig->database->mysql->username,
+					'password' => $unMarshaledConfig->database->mysql->password,
+					'schema' => $unMarshaledConfig->database->mysql->schema,
+					'port' => $unMarshaledConfig->database->mysql->port
+				],
+				'worker-limit' => $unMarshaledConfig->database->workerLimit
+			],
+			$statements
+		);
+		$arenasQueries = new RawQueries($arenasDb);
+
+		$arenas = yield from $arenasQueries->loadArenas();
+		$arenasDb->close();
+		unlink(Path::join($this->getDataFolder(), 'arenas.sqlite'));
+		/** @var list<array{'Arena': string, 'Name'?: string}>|list<array{'Name': string, 'LevelName': string, 'FirstSpawnPosX': float, 'FirstSpawnPosY': float, 'FirstSpawnPosZ': float, 'SecondSpawnPosX': float, 'SecondSpawnPosY': float, 'SecondSpawnPosZ': float, 'Kit': ?string}> $arenas */
+		if(count($arenas) === 0){
+			return;
+
+		}
+		$arenasManager = yield from self::$arenaManager->get();
+		$gens = [];
+		if(isset($arenas[0]['Arena'])){
+			/** @var array<string, Arena> $unserializedArenas */
+			$unserializedArenas = array_map('unserialize', array_column($arenas, 'Arena', 'Name'));
+			foreach($unserializedArenas as $arena){
+				try{
+					$gens[] = $arenasManager->add($arena);
+				}catch(RuntimeException $e){
+					throw new AssumptionFailedError('This should never happen', 0, $e);
+				}
+			}
+			yield from Await::all($gens);
+			return;
+		}
+
+		try{
+			/**
+			 * @var string $name
+			 * @var string $levelName
+			 * @var float $firstSpawnPosX
+			 * @var float $firstSpawnPosY
+			 * @var float $firstSpawnPosZ
+			 * @var float $secondSpawnPosX
+			 * @var float $secondSpawnPosY
+			 * @var float $secondSpawnPosZ
+			 * @var ?string $kit
+			 */
+			foreach($arenas as ['Name' => $name,
+				'LevelName' => $levelName,
+				'FirstSpawnPosX' => $firstSpawnPosX,
+				'FirstSpawnPosY' => $firstSpawnPosY,
+				'FirstSpawnPosZ' => $firstSpawnPosZ,
+				'SecondSpawnPosX' => $secondSpawnPosX,
+				'SecondSpawnPosY' => $secondSpawnPosY,
+				'SecondSpawnPosZ' => $secondSpawnPosZ,
+				'Kit' => $kit]){
+				$gens[] = $arenasManager->add(new Arena(
+					$name,
+					$levelName,
+					new Vector3($firstSpawnPosX, $firstSpawnPosY, $firstSpawnPosZ),
+					new Vector3($secondSpawnPosX, $secondSpawnPosY, $secondSpawnPosZ),
+					$kit
+				));
+			}
+		}catch(RuntimeException $e){
+			throw new AssumptionFailedError('This should never happen', 0, $e);
+		}
+		yield from Await::all($gens);
+	}
+
+	/**
+	 * @param array{'sqlite': string, 'mysql': string} $statements
+	 * @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, void>
+	 * @throws \poggit\libasynql\SqlError
+	 */
+	private function migrateKitsDatabase(Config $unMarshaledConfig, array $statements): Generator{
+		$kitsDb = libasynql::create(
+			$this,
+			[
+				'type' => $unMarshaledConfig->database->type->value,
+				'sqlite' => [
+					'file' => 'kits.sqlite'
+				],
+				'mysql' => [
+					'host' => $unMarshaledConfig->database->mysql->host,
+					'username' => $unMarshaledConfig->database->mysql->username,
+					'password' => $unMarshaledConfig->database->mysql->password,
+					'schema' => $unMarshaledConfig->database->mysql->schema,
+					'port' => $unMarshaledConfig->database->mysql->port
+				],
+				'worker-limit' => $unMarshaledConfig->database->workerLimit
+			],
+			$statements
+		);
+		$kitsQueries = new RawQueries($kitsDb);
+
+		$kits = yield from $kitsQueries->loadKits();
+		$kitsDb->close();
+		unlink(Path::join($this->getDataFolder(), 'kits.sqlite'));
+		/** @var list<array{Name: string, Kit: string}|array{Name: string, Armor: string, Inventory: string}> $kits */
+		if(count($kits) === 0){
+			return;
+		}
+		$kitsManager = yield from self::$kitManager->get();
+		$gens = [];
+		if(isset($kits[0]['Kit'])){
+			$kits = array_map(static function(string $serialized): Kit{
+				$deserialized = unserialize($serialized);
+				if(!$deserialized instanceof Kit){
+					throw new AssumptionFailedError('This should never happen');
+				}
+				return $deserialized;
+			}, array_column($kits, 'Kit', 'Name'));
+			foreach($kits as $kit){
+				try{
+					$gens[] = $kitsManager->add($kit);
+				}catch(RuntimeException $e){
+					throw new AssumptionFailedError('This should never happen', 0, $e);
+				}
+			}
+			yield from Await::all($gens);
+			return;
+		}
+		try{
+			/**
+			 * @var string $name
+			 * @var string $serializedArmor
+			 * @var string $serializedInventory
+			 */
+			foreach($kits as ['Name' => $name, 'Armor' => $serializedArmor, 'Inventory' => $serializedInventory]){
+				$armorContents = ContentsSerializer::deserializeItemContents($serializedArmor);
+				$inventoryContents = ContentsSerializer::deserializeItemContents($serializedInventory);
+				$gens[] = $kitsManager->add(new Kit($name, $armorContents, $inventoryContents));
+			}
+		}catch(NbtDataException|SavedDataLoadingException|ItemTypeDeserializeException|RuntimeException $e){
+			throw new AssumptionFailedError('This should never happen', 0, $e);
+		}
+		yield from Await::all($gens);
+	}
+
+	/** @throws \pocketmine\plugin\DisablePluginException */
+	private function getMergedDb(Config $unMarshaledConfig): RawQueries{
+		try{
+			$statements = [
+				'sqlite' => Path::join('sqlite', 'stmt.sql'),
+				'mysql' => Path::join('mysql', 'stmt.sql')
+			];
+			$mergedDb = new RawQueries(self::$database = libasynql::create(
 				$this,
 				[
 					'type' => $unMarshaledConfig->database->type->value,
 					'sqlite' => [
-						'file' => 'kits.sqlite'
+						'file' => $unMarshaledConfig->database->sqlite->file
 					],
 					'mysql' => [
 						'host' => $unMarshaledConfig->database->mysql->host,
@@ -190,86 +451,54 @@ final class ProperDuels extends PluginBase{
 				],
 				$statements
 			));
+			if($unMarshaledConfig->database->type === DatabaseType::Sqlite3){
+				$gens = [];
+				if(file_exists(Path::join($this->getDataFolder(), 'kits.sqlite'))){
+					$gens[] = $this->migrateKitsDatabase($unMarshaledConfig, $statements);
+				}
+				if(file_exists(Path::join($this->getDataFolder(), 'arenas.sqlite'))){
+					$gens[] = $this->migrateArenasDatabase($unMarshaledConfig, $statements);
+				}
+				Await::f2c(function() use ($mergedDb, $gens): Generator{
+					yield from $mergedDb->initForeignKeys();
+					yield from Await::all($gens);
+					$this->getLogger()->notice('Migrated arenas and kits from old database.');
+				}, catches: ['' => fn(Throwable $e) => throw $e]);
+			}
 		}catch(ExtensionMissingException|SqlError $e){
 			$this->getLogger()->error($e->getMessage());
 			throw new DisablePluginException;
 		}
-
-		self::$gameManager = new GameManager();
-		$server = $this->getServer();
-		$pluginManager = $server->getPluginManager();
-		self::$sessionManager = new SessionManager(
-			self::$arenaManager,
-			self::$gameManager,
-			$unMarshaledConfig,
-			$this,
-			$pluginManager
-		);
-		self::$queueManager = new QueueManager(
-			self::$arenaManager,
-			self::$gameManager,
-			self::$sessionManager,
-			self::$kitManager,
-			$server->getWorldManager(),
-			$this,
-			$unMarshaledConfig
-		);
-		try{
-			$pluginManager->registerEvents(new GameListener($unMarshaledConfig, self::$sessionManager), $this);
-			$pluginManager->registerEvents(new SessionListener(self::$sessionManager), $this);
-		}catch(PluginException $e){
-			throw new AssumptionFailedError('This should never happen', 0, $e);
-		}
-
-		if(!PacketHooker::isRegistered()){
-			try{
-				PacketHooker::register($this);
-			}catch(HookAlreadyRegistered $e){
-				throw new AssumptionFailedError('This should never happen', 0, $e);
-			}
-		}
-
-		$server->getCommandMap()->registerAll('properduels', [
-			new ArenaCommand(
-				$this,
-				'arena',
-				self::$arenaManager,
-				self::$kitManager,
-				'Manage arenas for duel matches.'
-			),
-			new DuelCommand(
-				$this,
-				'duel',
-				$unMarshaledConfig,
-				self::$sessionManager,
-				self::$gameManager,
-				self::$arenaManager,
-				self::$queueManager,
-				self::$kitManager,
-				'Duel players and queue to a match.'
-			),
-			new KitCommand(
-				$this,
-				'kit',
-				self::$kitManager,
-				'Manage kits for duel matches.'
-			)
-		]);
+		return $mergedDb;
 	}
 
-	/** @throws \RuntimeException */
-	public function onDisable(): void{
-		if(isset(self::$arenaManager)){
-			self::$arenaManager->close();
-		}
-		if(isset(self::$kitManager)){
-			self::$kitManager->close();
-		}
-		if(isset(self::$gameManager)){
-			self::$gameManager->close();
-		}
-		if(isset(self::$sessionManager)){
-			self::$sessionManager->close();
-		}
+	private function setupManagers(RawQueries $mergedDb,
+		Config $unMarshaledConfig,
+		PluginManager $pluginManager,
+		Server $server): void{
+		self::$kitManager = new Loading(function() use ($mergedDb, $unMarshaledConfig): Generator{
+			return yield from KitManager::create($mergedDb, $unMarshaledConfig->database->type);
+		});
+		self::$arenaManager = new Loading(function() use ($mergedDb, $unMarshaledConfig): Generator{
+			return yield from ArenaManager::create($mergedDb, $unMarshaledConfig->database->type);
+		});
+		self::$gameManager = new GameManager();
+		self::$sessionManager =  new SessionManager(
+				self::$gameManager,
+				$unMarshaledConfig,
+				$this,
+				$pluginManager
+			);
+		self::$queueManager = new Loading(function() use ($server, $unMarshaledConfig): Generator{
+			$kitManager = yield from self::$kitManager->get();
+			return new QueueManager(
+				self::$gameManager,
+				self::$sessionManager,
+				$kitManager,
+				$server->getWorldManager(),
+				$this,
+				$unMarshaledConfig
+			);
+		});
 	}
 }

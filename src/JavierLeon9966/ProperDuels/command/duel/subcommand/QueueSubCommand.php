@@ -4,17 +4,18 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels\command\duel\subcommand;
 
-use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\CortexPE\Commando\args\RawStringArgument;
-use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\CortexPE\Commando\BaseSubCommand;
-use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\CortexPE\Commando\constraint\InGameRequiredConstraint;
-use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\CortexPE\Commando\exception\ArgumentOrderException;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\CortexPE\Commando\args\RawStringArgument;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\CortexPE\Commando\BaseSubCommand;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\CortexPE\Commando\constraint\InGameRequiredConstraint;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\CortexPE\Commando\exception\ArgumentOrderException;
+use Generator;
 use JavierLeon9966\ProperDuels\arena\ArenaManager;
 use JavierLeon9966\ProperDuels\QueueManager;
-use LogicException;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\{AssumptionFailedError, TextFormat};
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\SOFe\AwaitGenerator\Await;
 
 class QueueSubCommand extends BaseSubCommand{
 
@@ -40,42 +41,41 @@ class QueueSubCommand extends BaseSubCommand{
 			throw new AssumptionFailedError(InGameRequiredConstraint::class . ' should have prevented this');
 		}
 		$rawUUID = $sender->getUniqueId()->getBytes();
-		/** @var array{'arena'?: string} $args */
-		if(isset($args['arena'])){
-			$arena = $this->arenaManager->get($args['arena']);
-			if($arena === null){
-				$sender->sendMessage(TextFormat::RED."No arena was found by the name '$args[arena]'");
-				return;
-			}
+		Await::f2c(function() use ($args, $sender, $rawUUID): Generator{
+			/** @var array{'arena'?: string} $args */
+			if(isset($args['arena'])){
+				$arena = yield from $this->arenaManager->get($args['arena']);
+				if(!$sender->isConnected()){
+					return;
+				}
+				if($arena === null){
+					$sender->sendMessage(TextFormat::RED."No arena was found by the name '$args[arena]'");
+					return;
+				}
 
-			if($this->queueManager->has($rawUUID)){
-				$sender->sendMessage(TextFormat::RED.'You are already in a queue');
-				return;
-			}
+				if($this->queueManager->has($rawUUID)){
+					$sender->sendMessage(TextFormat::RED.'You are already in a queue');
+					return;
+				}
+			}else{
+				$arena = yield from $this->arenaManager->getRandom();
+				if(!$sender->isConnected()){
+					return;
+				}
+				if($arena === null){
+					$sender->sendMessage(TextFormat::RED . 'There are no existing arenas');
+					return;
+				}
 
-			try{
-				$this->queueManager->add($rawUUID, $arena);
-			}catch(LogicException $e){
-				throw new AssumptionFailedError('this should never happen', 0, $e);
+				if($this->queueManager->has($rawUUID)){
+					$this->queueManager->remove($rawUUID);
+					$sender->sendMessage('Successfully removed from the queue');
+					return;
+				}
 			}
+			$this->queueManager->add($rawUUID, $arena);
 			$sender->sendMessage('Successfully added into the queue');
-			return;
-		}elseif($this->queueManager->has($rawUUID)){
-			$this->queueManager->remove($rawUUID);
-			$sender->sendMessage('Successfully removed from the queue');
-			return;
-		}
-
-		if(count($this->arenaManager->all()) === 0){
-			$sender->sendMessage(TextFormat::RED.'There are no existing arenas');
-			return;
-		}
-		try{
-			$this->queueManager->add($rawUUID);
-		}catch(LogicException $e){
-			throw new AssumptionFailedError('this should never happen', 0, $e);
-		}
-		$sender->sendMessage('Successfully added into the queue');
+		});
 	}
 
 	public function prepare(): void{

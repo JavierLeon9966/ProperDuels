@@ -4,7 +4,6 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels\session;
 
-use JavierLeon9966\ProperDuels\arena\ArenaManager;
 use JavierLeon9966\ProperDuels\config\Config;
 use JavierLeon9966\ProperDuels\game\GameManager;
 use pocketmine\player\Player;
@@ -17,7 +16,6 @@ final class SessionManager{
 	private array $sessions = [];
 
 	public function __construct(
-		private readonly ArenaManager $arenaManager,
 		private readonly GameManager $gameManager,
 		private readonly Config $config,
 		private readonly Plugin $plugin,
@@ -27,7 +25,6 @@ final class SessionManager{
 
 	public function add(Player $player): void{
 		$this->sessions[$player->getUniqueId()->getBytes()] = new Session(
-			$this->arenaManager,
 			$this->gameManager,
 			$this->config,
 			$this->plugin,

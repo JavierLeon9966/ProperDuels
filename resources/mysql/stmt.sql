@@ -39,8 +39,7 @@ SELECT * FROM Arenas;
 -- #      :armor string
 -- #      :inventory string
 INSERT INTO Kits(Name, Armor, Inventory)
-VALUES (:name, :armor, :inventory)
-ON DUPLICATE KEY UPDATE Armor = :armor, Inventory = :inventory;
+VALUES (:name, :armor, :inventory);
 -- #    }
 -- #    { arena
 -- #      :name string
@@ -73,17 +72,7 @@ VALUES (
   :secondSpawnPosY,
   :secondSpawnPosZ,
   :kit
-)
-ON DUPLICATE KEY
-UPDATE
-  LevelName = :levelName,
-  FirstSpawnPosX = :firstSpawnPosX,
-  FirstSpawnPosY = :firstSpawnPosY,
-  FirstSpawnPosZ = :firstSpawnPosZ,
-  SecondSpawnPosX = :secondSpawnPosX,
-  SecondSpawnPosY = :secondSpawnPosY,
-  SecondSpawnPosZ = :secondSpawnPosZ,
-  Kit = :kit;
+);
 -- #    }
 -- #  }
 -- #  { delete
@@ -125,6 +114,44 @@ CREATE TABLE Arenas(
   PRIMARY KEY(Name),
   FOREIGN KEY(Kit) REFERENCES Kits(Name) ON DELETE SET NULL
 );
+-- #    }
+-- #  }
+-- #  { get
+-- #    { kit
+-- #      :name string
+SELECT * FROM Kits
+WHERE Name = :name;
+-- #    }
+-- #    { arena
+-- #      :name string
+SELECT * FROM Arenas
+WHERE Name = :name;
+-- #    }
+-- #  }
+-- #  { get_random
+-- #    { arena
+SELECT * FROM Arenas
+ORDER BY RAND()
+LIMIT 1;
+-- #    }
+-- #    { kit
+SELECT * FROM Kits
+ORDER BY RAND()
+LIMIT 1;
+-- #    }
+-- #  }
+-- #  { list
+-- #    { kits
+-- #      :offset int
+-- #      :limit int
+SELECT * FROM Kits
+LIMIT :limit OFFSET :offset;
+-- #    }
+-- #    { arenas
+-- #      :offset int
+-- #      :limit int
+SELECT * FROM Arenas
+LIMIT :limit OFFSET :offset;
 -- #    }
 -- #  }
 -- #}

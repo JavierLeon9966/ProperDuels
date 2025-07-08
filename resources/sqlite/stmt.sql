@@ -1,6 +1,9 @@
 -- #!sqlite
 -- #{ properduels
 -- #  { init
+-- #    { foreign_keys
+PRAGMA foreign_keys = ON;
+-- #    }
 -- #    { kits
 CREATE TABLE IF NOT EXISTS Kits(
   Name VARCHAR(32) NOT NULL,
@@ -38,7 +41,7 @@ SELECT * FROM Arenas;
 -- #      :name string
 -- #      :armor string
 -- #      :inventory string
-INSERT OR REPLACE INTO Kits(Name, Armor, Inventory)
+INSERT INTO Kits(Name, Armor, Inventory)
 VALUES (:name, :armor, :inventory);
 -- #    }
 -- #    { arena
@@ -51,7 +54,7 @@ VALUES (:name, :armor, :inventory);
 -- #      :secondSpawnPosY float
 -- #      :secondSpawnPosZ float
 -- #      :kit ?string
-INSERT OR REPLACE INTO Arenas(
+INSERT INTO Arenas(
   Name,
   LevelName,
   FirstSpawnPosX,
@@ -114,6 +117,44 @@ CREATE TABLE Arenas(
   PRIMARY KEY(Name),
   FOREIGN KEY(Kit) REFERENCES Kits(Name) ON DELETE SET NULL
 );
+-- #    }
+-- #  }
+-- #  { get
+-- #    { kit
+-- #      :name string
+SELECT * FROM Kits
+WHERE Name = :name;
+-- #    }
+-- #    { arena
+-- #      :name string
+SELECT * FROM Arenas
+WHERE Name = :name;
+-- #    }
+-- #  }
+-- #  { get_random
+-- #    { arena
+SELECT * FROM Arenas
+ORDER BY RANDOM()
+LIMIT 1;
+-- #    }
+-- #    { kit
+SELECT * FROM Kits
+ORDER BY RANDOM()
+LIMIT 1;
+-- #    }
+-- #  }
+-- #  { list
+-- #    { kits
+-- #      :offset int
+-- #      :limit int
+SELECT * FROM Kits
+LIMIT :limit OFFSET :offset;
+-- #    }
+-- #    { arenas
+-- #      :offset int
+-- #      :limit int
+SELECT * FROM Arenas
+LIMIT :limit OFFSET :offset;
 -- #    }
 -- #  }
 -- #}

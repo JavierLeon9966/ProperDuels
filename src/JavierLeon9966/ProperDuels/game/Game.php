@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels\game;
 
+use Generator;
 use JavierLeon9966\ProperDuels\arena\Arena;
 use JavierLeon9966\ProperDuels\config\Config;
 use JavierLeon9966\ProperDuels\event\GameFinishEvent;
@@ -13,13 +14,14 @@ use JavierLeon9966\ProperDuels\kit\KitManager;
 use JavierLeon9966\ProperDuels\QueueManager;
 use JavierLeon9966\ProperDuels\session\Session;
 use pocketmine\plugin\Plugin;
-use pocketmine\scheduler\{CancelTaskException, ClosureTask};
 use pocketmine\Server;
 use pocketmine\utils\AssumptionFailedError;
 use pocketmine\utils\Utils;
 use pocketmine\world\Position;
 use pocketmine\world\WorldManager;
-use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\SOFe\InfoAPI\InfoAPI;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\SOFe\AwaitGenerator\Await;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\SOFe\InfoAPI\InfoAPI;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\SOFe\Zleep\Zleep;
 
 final class Game{
 
@@ -67,105 +69,104 @@ final class Game{
 
 	/** @throws \RuntimeException */
 	public function start(): void{
-		if($this->started){
-			return;
-		}
-
-		$secondSession = $this->sessions[1] ?? throw new AssumptionFailedError('This should never happen');
-		$firstSession = $this->sessions[0] ?? throw new AssumptionFailedError('This should never happen');
-		$secondSession->removeInvite($firstSession->getPlayer()->getUniqueId()->getBytes());
-		$firstSession->removeInvite($secondSession->getPlayer()->getUniqueId()->getBytes());
-
-		$arenaName = $this->arena->getName();
-
-		$kit = $this->arena->getKit();
-		if(($kit !== null and !$this->kitManager->has($kit)) or count($this->kitManager->all()) === 0){
-			$this->gameManager->remove($arenaName);
-			foreach($this->sessions as $session){
-				$player1 = $session->getPlayer();
-				$player1->sendMessage(InfoAPI::render($this->plugin, $this->config->match->failure->kitNotFound, [
-
-				], $player1));
+		Await::f2c(function(): Generator{
+			if($this->started){
+				return;
 			}
-			return;
-		}
-		$kit = $this->kitManager->get($kit !== null ? $kit : array_rand($this->kitManager->all())) ?? throw new AssumptionFailedError('This should never happen');
+			$this->started = true;
 
-		$world = $this->worldManager->getWorldByName($this->arena->getLevelName());
-		if($world === null){
-			$this->gameManager->remove($arenaName);
-			foreach($this->sessions as $session){
-				$player2 = $session->getPlayer();
-				$player2->sendMessage(InfoAPI::render($this->plugin, $this->config->match->failure->levelNotFound, [
+			$secondSession = $this->sessions[1] ?? throw new AssumptionFailedError('This should never happen');
+			$firstSession = $this->sessions[0] ?? throw new AssumptionFailedError('This should never happen');
+			$secondSession->removeInvite($firstSession->getPlayer()->getUniqueId()->getBytes());
+			$secondSession->setGame($this);
+			$firstSession->removeInvite($secondSession->getPlayer()->getUniqueId()->getBytes());
+			$firstSession->setGame($this);
 
-				], $player2));
-			}
-			return;
-		}
+			$arenaName = $this->arena->getName();
 
-		$spawns = [
-			Position::fromObject($this->arena->getFirstSpawnPos(), $world),
-			Position::fromObject($this->arena->getSecondSpawnPos(), $world)
-		];
-
-		foreach($this->sessions as $session){
-			$session->setGame($this);
-
-			$player = $session->getPlayer();
-			$player->removeCurrentWindow();
-			$session->saveInfo();
-
-			$this->queueManager->remove($player->getUniqueId()->getBytes());
-
-			$player->teleport(array_shift($spawns) ?? throw new AssumptionFailedError('This should never happen'));
-
-			$player->getArmorInventory()->setContents($kit->getArmor());
-			$player->getInventory()->setContents($kit->getInventory());
-
-			$player->getXpManager()->setCurrentTotalXp(0);
-
-			$player->extinguish();
-			$player->setAirSupplyTicks($player->getMaxAirSupplyTicks());
-			$player->noDamageTicks = Server::TARGET_TICKS_PER_SECOND * $this->config->match->countdown->time;
-			
-			$player->getEffects()->clear();
-			$player->setHealth($player->getMaxHealth());
-			
-			foreach($player->getAttributeMap()->getAll() as $attr){
-				$attr->resetToDefault();
-			}
-
-			$player->setNoClientPredictions();
-		}
-
-		$this->plugin->getScheduler()->scheduleRepeatingTask(new ClosureTask(function(): void{
-			/** @var int $countdown */
-			static $countdown = $this->config->match->countdown->time;
-
-			if($countdown > 0 and $this->started){
+			$world = $this->worldManager->getWorldByName($this->arena->getLevelName());
+			if($world === null){
+				$this->gameManager->remove($arenaName);
 				foreach($this->sessions as $session){
+					$session->setGame(null);
+					$player2 = $session->getPlayer();
+					$player2->sendMessage(InfoAPI::render($this->plugin, $this->config->match->failure->levelNotFound, [
+
+					], $player2));
+				}
+				return;
+			}
+
+			$kitName = $this->arena->getKit();
+			$kit = $kitName === null ? yield from $this->kitManager->getRandom() : yield from $this->kitManager->get($kitName);
+			if(!$this->started){
+				return;
+			}
+			if($kit === null){
+				$this->gameManager->remove($arenaName);
+				foreach($this->sessions as $session){
+					$session->setGame(null);
 					$player1 = $session->getPlayer();
-					$player1->sendMessage(InfoAPI::render($this->plugin, $this->config->match->countdown->message, [
-						'seconds'  => $countdown
+					$player1->sendMessage(InfoAPI::render($this->plugin, $this->config->match->failure->kitNotFound, [
+
 					], $player1));
 				}
+				return;
+			}
 
-				--$countdown;
-			}else{
+			$spawns = [
+				Position::fromObject($this->arena->getFirstSpawnPos(), $world),
+				Position::fromObject($this->arena->getSecondSpawnPos(), $world)
+			];
+
+			foreach($this->sessions as $session){
+				$player = $session->getPlayer();
+				$player->removeCurrentWindow();
+				$session->saveInfo();
+
+				$this->queueManager->remove($player->getUniqueId()->getBytes());
+
+				$player->teleport(array_shift($spawns) ?? throw new AssumptionFailedError('This should never happen'));
+
+				$player->getArmorInventory()->setContents($kit->getArmor());
+				$player->getInventory()->setContents($kit->getInventory());
+
+				$player->getXpManager()->setCurrentTotalXp(0);
+
+				$player->extinguish();
+				$player->setAirSupplyTicks($player->getMaxAirSupplyTicks());
+				$player->noDamageTicks = Server::TARGET_TICKS_PER_SECOND * $this->config->match->countdown->time;
+
+				$player->getEffects()->clear();
+				$player->setHealth($player->getMaxHealth());
+
+				foreach($player->getAttributeMap()->getAll() as $attr){
+					$attr->resetToDefault();
+				}
+
+				$player->setNoClientPredictions();
+			}
+
+			for($i = 0; $i < $this->config->match->countdown->time; $i++){
 				foreach($this->sessions as $session){
 					$player = $session->getPlayer();
-
-					$player->setNoClientPredictions(false);
-
-					$player->sendMessage(InfoAPI::render($this->plugin, $this->config->match->start, [], $player));
+					$player->sendMessage(InfoAPI::render($this->plugin, $this->config->match->countdown->message, [
+						'seconds'  => $this->config->match->countdown->time - $i
+					], $player));
 				}
-				throw new CancelTaskException;
+				yield from Zleep::sleepSeconds($this->plugin, 1.0);
 			}
-		}), 20);
 
-		(new GameStartEvent($this, $firstSession->getPlayer(), $secondSession->getPlayer()))->call();
+			foreach($this->sessions as $session){
+				$player = $session->getPlayer();
 
-		$this->started = true;
+				$player->setNoClientPredictions(false);
+
+				$player->sendMessage(InfoAPI::render($this->plugin, $this->config->match->start, [], $player));
+			}
+
+			(new GameStartEvent($this, $firstSession->getPlayer(), $secondSession->getPlayer()))->call();
+		});
 	}
 
 	/** @throws \RuntimeException */
@@ -200,11 +201,14 @@ final class Game{
 				$player->teleport($player->getSpawn());
 
 				if($defeated !== null){
-					$player->getServer()->broadcastMessage(InfoAPI::render($this->plugin, $this->config->match->finish, [
-						'winner' => $player,
-						'defeated' =>  $defeated->getPlayer(),
-						'arena' => $this->arena
-					], $player));
+					$player->getServer()->broadcastMessage(InfoAPI::render($this->plugin,
+						$this->config->match->finish,
+						[
+							'winner' => $player,
+							'defeated' => $defeated->getPlayer(),
+							'arena' => $this->arena
+						],
+						$player));
 				}
 			}
 
@@ -213,5 +217,7 @@ final class Game{
 		}
 
 		$this->gameManager->remove($this->arena->getName());
+
+		$this->queueManager->update();
 	}
 }

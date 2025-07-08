@@ -4,11 +4,18 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels\command\arena\subcommand;
 
-use JavierLeon9966\ProperDuels\libs\_1e764776229de5e0\CortexPE\Commando\BaseSubCommand;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\CortexPE\Commando\args\IntegerArgument;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\CortexPE\Commando\BaseSubCommand;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\CortexPE\Commando\exception\ArgumentOrderException;
+use Generator;
 use JavierLeon9966\ProperDuels\arena\ArenaManager;
 use pocketmine\command\CommandSender;
+use pocketmine\player\Player;
 use pocketmine\plugin\PluginBase;
+use pocketmine\utils\AssumptionFailedError;
+use pocketmine\utils\Limits;
 use pocketmine\utils\TextFormat;
+use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\SOFe\AwaitGenerator\Await;
 
 class ListSubCommand extends BaseSubCommand{
 
@@ -19,18 +26,28 @@ class ListSubCommand extends BaseSubCommand{
 
 	/** @param array<array-key, mixed> $args */
 	public function onRun(CommandSender $sender, string $aliasUsed, array $args): void{
-		$arenas = array_keys($this->arenaManager->all());
-		$count = count($arenas);
-		if($count === 0){
-			$sender->sendMessage(TextFormat::RED.'There are no arenas');
-			return;
-		}
-
-		$sender->sendMessage("There are $count arena(s):");
-		$sender->sendMessage(implode(', ', $arenas));
+		Await::f2c(function() use ($args, $sender): Generator{
+			$limit = 10;
+			/** @var array{'page'?: int} $args */
+			$page = min(intdiv(Limits::INT64_MAX, $limit) + 1, max(1, $args['page'] ?? 1));
+			$arenas = yield from $this->arenaManager->getList(($page - 1) * $limit, $limit);
+			if($sender instanceof Player && !$sender->isConnected()){
+				return;
+			}
+			$sender->sendMessage(TextFormat::GREEN."Arenas (Page $page):");
+			foreach($arenas as $arena){
+				$kitName = $arena->getKit() ?? 'Random';
+				$sender->sendMessage(TextFormat::YELLOW . "- {$arena->getName()} (World: {$arena->getLevelName()}, Kit: $kitName, Spawns: {$arena->getFirstSpawnPos()->asVector3()}, {$arena->getSecondSpawnPos()->asVector3()})");
+			}
+		});
 	}
 
 	public function prepare(): void{
 		$this->setPermission('properduels.command.arena.list');
+		try{
+			$this->registerArgument(0, new IntegerArgument('page', true));
+		}catch(ArgumentOrderException $e){
+			throw new AssumptionFailedError('This should never happen', 0, $e);
+		}
 	}
 }
