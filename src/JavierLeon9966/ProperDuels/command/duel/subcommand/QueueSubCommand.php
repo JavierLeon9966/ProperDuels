@@ -44,37 +44,37 @@ class QueueSubCommand extends BaseSubCommand{
 		Await::f2c(function() use ($args, $sender, $rawUUID): Generator{
 			/** @var array{'arena'?: string} $args */
 			if(isset($args['arena'])){
+				$arena = yield from $this->arenaManager->get($args['arena']);
+				if(!$sender->isConnected()){
+					return;
+				}
+				if($arena === null){
+					$sender->sendMessage(TextFormat::RED."No arena was found by the name '$args[arena]'");
+					return;
+				}
+
 				if($this->queueManager->has($rawUUID)){
 					$sender->sendMessage(TextFormat::RED.'You are already in a queue');
 					return;
 				}
-
-				$arena = yield from $this->arenaManager->get($args['arena']);
-				if($arena === null){
-					if($sender->isConnected()){
-						$sender->sendMessage(TextFormat::RED."No arena was found by the name '$args[arena]'");
-					}
+			}else{
+				$arena = yield from $this->arenaManager->getRandom();
+				if(!$sender->isConnected()){
 					return;
 				}
-			}else{
+				if($arena === null){
+					$sender->sendMessage(TextFormat::RED . 'There are no existing arenas');
+					return;
+				}
+
 				if($this->queueManager->has($rawUUID)){
 					$this->queueManager->remove($rawUUID);
 					$sender->sendMessage('Successfully removed from the queue');
 					return;
 				}
-
-				$arena = yield from $this->arenaManager->getRandom();
-				if($arena === null){
-					if($sender->isConnected()){
-						$sender->sendMessage(TextFormat::RED . 'There are no existing arenas');
-					}
-					return;
-				}
 			}
 			$this->queueManager->add($rawUUID, $arena);
-			if($sender->isConnected()){
-				$sender->sendMessage('Successfully added into the queue');
-			}
+			$sender->sendMessage('Successfully added into the queue');
 		});
 	}
 
