@@ -438,8 +438,10 @@ final class ProperDuels extends PluginBase{
 				}
 				Await::f2c(function() use ($mergedDb, $gens): Generator{
 					yield from $mergedDb->initForeignKeys();
-					yield from Await::all($gens);
-					$this->getLogger()->notice('Migrated arenas and kits from old database.');
+					if(count($gens) > 0){
+						yield from Await::all($gens);
+						$this->getLogger()->notice('Migrated arenas and kits from old database.');
+					}
 				}, catches: ['' => fn(Throwable $e) => throw $e]);
 			}else{
 				Await::f2c(function() use ($mergedDb): Generator{
