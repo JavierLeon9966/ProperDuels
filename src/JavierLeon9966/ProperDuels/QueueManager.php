@@ -11,7 +11,6 @@ use JavierLeon9966\ProperDuels\game\GameManager;
 use JavierLeon9966\ProperDuels\kit\KitManager;
 use JavierLeon9966\ProperDuels\session\SessionManager;
 use pocketmine\plugin\Plugin;
-use pocketmine\utils\AssumptionFailedError;
 use pocketmine\world\WorldManager;
 use const SORT_REGULAR;
 
@@ -60,10 +59,7 @@ final class QueueManager{
 		foreach(array_unique($arenas, SORT_REGULAR) as $k => $arenaName){
 			if(!$this->gameManager->has($arenaName)){
 				$sessions = [];
-				foreach(array_slice(array_keys($arenas, $arenaName, true), 0, 2) as $rawUUID){
-					if(!is_string($rawUUID)){
-						throw new AssumptionFailedError('This should never happen');
-					}
+				foreach(array_map(strval(...), array_slice(array_keys($arenas, $arenaName, true), 0, 2)) as $rawUUID){
 					$session = $this->sessionManager->get($rawUUID);
 					if($session === null){
 						unset($this->queues[$rawUUID]);
