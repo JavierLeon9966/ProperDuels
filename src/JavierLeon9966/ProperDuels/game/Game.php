@@ -201,11 +201,14 @@ final class Game{
 				$player->teleport($player->getSpawn());
 
 				if($defeated !== null){
-					$player->getServer()->broadcastMessage(InfoAPI::render($this->plugin, $this->config->match->finish, [
-						'winner' => $player,
-						'defeated' =>  $defeated->getPlayer(),
-						'arena' => $this->arena
-					], $player));
+					$player->getServer()->broadcastMessage(InfoAPI::render($this->plugin,
+						$this->config->match->finish,
+						[
+							'winner' => $player,
+							'defeated' => $defeated->getPlayer(),
+							'arena' => $this->arena
+						],
+						$player));
 				}
 			}
 
@@ -214,5 +217,7 @@ final class Game{
 		}
 
 		$this->gameManager->remove($this->arena->getName());
+
+		$this->queueManager->update();
 	}
 }
