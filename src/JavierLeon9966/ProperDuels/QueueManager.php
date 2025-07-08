@@ -56,10 +56,11 @@ final class QueueManager{
 
 	/** @throws \RuntimeException */
 	public function update(): void{
-		foreach(array_unique($this->queues, SORT_REGULAR) as $arena){
-			if(!$this->gameManager->has($arena->getName())){
+		$arenas = array_map(fn(Arena $arena) => $arena->getName(), $this->queues);
+		foreach(array_unique($arenas, SORT_REGULAR) as $k => $arenaName){
+			if(!$this->gameManager->has($arenaName)){
 				$sessions = [];
-				foreach(array_slice(array_keys($this->queues, $arena, true), 0, 2) as $rawUUID){
+				foreach(array_slice(array_keys($arenas, $arenaName, true), 0, 2) as $rawUUID){
 					if(!is_string($rawUUID)){
 						throw new AssumptionFailedError('This should never happen');
 					}
@@ -80,7 +81,7 @@ final class QueueManager{
 						$this->worldManager,
 						$this,
 						$this->plugin,
-						$arena,
+						$this->queues[$k],
 						[$sessions[0], $sessions[1]]
 					));
 				}
