@@ -489,6 +489,7 @@ final class ProperDuels extends PluginBase{
 			return yield from KitManager::create($mergedDb, $unMarshaledConfig->database->type);
 		});
 		self::$arenaManager = new Loading(function() use ($mergedDb, $unMarshaledConfig): Generator{
+			yield from self::$kitManager->get();
 			return yield from ArenaManager::create($mergedDb, $unMarshaledConfig->database->type);
 		});
 		self::$gameManager = new GameManager();
