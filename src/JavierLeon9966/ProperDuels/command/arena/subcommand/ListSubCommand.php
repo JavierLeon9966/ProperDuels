@@ -13,6 +13,7 @@ use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\AssumptionFailedError;
+use pocketmine\utils\Limits;
 use pocketmine\utils\TextFormat;
 use SOFe\AwaitGenerator\Await;
 
@@ -26,21 +27,17 @@ class ListSubCommand extends BaseSubCommand{
 	/** @param array<array-key, mixed> $args */
 	public function onRun(CommandSender $sender, string $aliasUsed, array $args): void{
 		Await::f2c(function() use ($args, $sender): Generator{
+			$limit = 10;
 			/** @var array{'page'?: int} $args */
-			$page = $args['page'] ?? 1;
-			$arenas = yield from $this->arenaManager->getList($page - 1, 10);
+			$page = min(intdiv(Limits::INT64_MAX, $limit) + 1, max(1, $args['page'] ?? 1));
+			$arenas = yield from $this->arenaManager->getList(($page - 1) * $limit, $limit);
 			if($sender instanceof Player && !$sender->isConnected()){
-				return;
-			}
-			$count = count($arenas);
-			if($count === 0){
-				$sender->sendMessage(TextFormat::RED.'There are no arenas');
 				return;
 			}
 			$sender->sendMessage(TextFormat::GREEN."Arenas (Page $page):");
 			foreach($arenas as $arena){
 				$kitName = $arena->getKit() ?? 'Random';
-				$sender->sendMessage(TextFormat::YELLOW . "- {$arena->getName()} (Level: {$arena->getLevelName()}, Kit: $kitName, Spawns: {$arena->getFirstSpawnPos()->asVector3()}, {$arena->getSecondSpawnPos()->asVector3()})");
+				$sender->sendMessage(TextFormat::YELLOW . "- {$arena->getName()} (World: {$arena->getLevelName()}, Kit: $kitName, Spawns: {$arena->getFirstSpawnPos()->asVector3()}, {$arena->getSecondSpawnPos()->asVector3()})");
 			}
 		});
 	}
