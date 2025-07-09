@@ -8,6 +8,53 @@ CREATE TABLE IF NOT EXISTS Kits(
   Inventory LONGBLOB NOT NULL,
   PRIMARY KEY(Name)
 );
+-- # &
+CREATE PROCEDURE MigrateKits(OUT migrated TINYINT)
+BEGIN
+    DECLARE got_lock    TINYINT DEFAULT 0;
+    DECLARE col_count   INT     DEFAULT 0;
+    DECLARE good_count  INT     DEFAULT 0;
+
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION
+        BEGIN
+            IF got_lock = 1 THEN
+                DO RELEASE_LOCK('kits_old_table_migration_lock');
+            END IF;
+        END;
+
+    SET migrated = 0;
+
+    SET got_lock = GET_LOCK('kits_old_table_migration_lock', 10);
+
+    IF got_lock = 1 THEN
+        SELECT COUNT(*) INTO col_count
+        FROM information_schema.columns
+        WHERE table_schema = DATABASE()
+          AND table_name   = 'Kits';
+
+        SELECT COUNT(*) INTO good_count
+        FROM information_schema.columns
+        WHERE table_schema = DATABASE()
+          AND table_name   = 'Kits'
+          AND column_name IN ('Name','Kit');
+
+        IF col_count = 2 AND good_count = 2 THEN
+            START TRANSACTION;
+            DROP TABLE IF EXISTS Kits;
+            CREATE TABLE IF NOT EXISTS Kits(
+                Name VARCHAR(32) NOT NULL,
+                Armor LONGBLOB NOT NULL,
+                Inventory LONGBLOB NOT NULL,
+                PRIMARY KEY(Name)
+            );
+            COMMIT;
+
+            SET migrated = 1;
+        END IF;
+
+        DO RELEASE_LOCK('kits_old_table_migration_lock');
+    END IF;
+END;
 -- #    }
 -- #    { arenas
 CREATE TABLE IF NOT EXISTS Arenas(
@@ -23,14 +70,68 @@ CREATE TABLE IF NOT EXISTS Arenas(
   PRIMARY KEY(Name),
   FOREIGN KEY(Kit) REFERENCES Kits(Name) ON DELETE SET NULL
 );
+-- # &
+CREATE PROCEDURE MigrateArenas(OUT migrated TINYINT)
+BEGIN
+    DECLARE got_lock    TINYINT DEFAULT 0;
+    DECLARE col_count   INT     DEFAULT 0;
+    DECLARE good_count  INT     DEFAULT 0;
+
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION
+        BEGIN
+            IF got_lock = 1 THEN
+                DO RELEASE_LOCK('arenas_old_table_migration_lock');
+            END IF;
+        END;
+
+    SET migrated = 0;
+
+    SET got_lock = GET_LOCK('arenas_old_table_migration_lock', 10);
+
+    IF got_lock = 1 THEN
+        SELECT COUNT(*) INTO col_count
+        FROM information_schema.columns
+        WHERE table_schema = DATABASE()
+          AND table_name   = 'Arenas';
+
+        SELECT COUNT(*) INTO good_count
+        FROM information_schema.columns
+        WHERE table_schema = DATABASE()
+          AND table_name   = 'Arenas'
+          AND column_name IN ('Name','Arena');
+
+        IF col_count = 2 AND good_count = 2 THEN
+            START TRANSACTION;
+            DROP TABLE IF EXISTS Arenas;
+            CREATE TABLE Arenas (
+                Name             VARCHAR(32)  NOT NULL,
+                LevelName        VARCHAR(64)  NOT NULL,
+                FirstSpawnPosX   DOUBLE       NOT NULL,
+                FirstSpawnPosY   DOUBLE       NOT NULL,
+                FirstSpawnPosZ   DOUBLE       NOT NULL,
+                SecondSpawnPosX  DOUBLE       NOT NULL,
+                SecondSpawnPosY  DOUBLE       NOT NULL,
+                SecondSpawnPosZ  DOUBLE       NOT NULL,
+                Kit              VARCHAR(32),
+                PRIMARY KEY (Name),
+                FOREIGN KEY (Kit) REFERENCES Kits(Name) ON DELETE SET NULL
+            );
+            COMMIT;
+
+            SET migrated = 1;
+        END IF;
+
+        DO RELEASE_LOCK('arenas_old_table_migration_lock');
+    END IF;
+END;
 -- #    }
 -- #  }
--- #  { load
+-- #  { load_old
 -- #    { kits
-SELECT * FROM Kits;
+SELECT Name, Kit FROM Kits;
 -- #    }
 -- #    { arenas
-SELECT * FROM Arenas;
+SELECT Name, Arena FROM Arenas;
 -- #    }
 -- #  }
 -- #  { register
@@ -87,35 +188,6 @@ DELETE FROM Arenas
 WHERE Name = :name;
 -- #    }
 -- #  }
--- #  { reset
--- #    { kits
-DROP TABLE Kits;
--- # &
-CREATE TABLE Kits(
-  Name VARCHAR(32) NOT NULL,
-  Armor LONGBLOB NOT NULL,
-  Inventory LONGBLOB NOT NULL,
-  PRIMARY KEY(Name)
-);
--- #    }
--- #    { arenas
-DROP TABLE Arenas;
--- # &
-CREATE TABLE Arenas(
-  Name VARCHAR(32) NOT NULL,
-  LevelName VARCHAR(64) NOT NULL,
-  FirstSpawnPosX DOUBLE NOT NULL,
-  FirstSpawnPosY DOUBLE NOT NULL,
-  FirstSpawnPosZ DOUBLE NOT NULL,
-  SecondSpawnPosX DOUBLE NOT NULL,
-  SecondSpawnPosY DOUBLE NOT NULL,
-  SecondSpawnPosZ DOUBLE NOT NULL,
-  Kit VARCHAR(32),
-  PRIMARY KEY(Name),
-  FOREIGN KEY(Kit) REFERENCES Kits(Name) ON DELETE SET NULL
-);
--- #    }
--- #  }
 -- #  { get
 -- #    { kit
 -- #      :name string
@@ -152,6 +224,18 @@ LIMIT :limit OFFSET :offset;
 -- #      :limit int
 SELECT * FROM Arenas
 LIMIT :limit OFFSET :offset;
+-- #    }
+-- #  }
+-- #  { check_for_migration
+-- #    { kits
+CALL MigrateKits(@migrationNeeded);
+-- # &
+SELECT @migrationNeeded AS migrationNeeded;
+-- #    }
+-- #    { arenas
+CALL MigrateArenas(@migrationNeeded);
+-- # &
+SELECT @migrationNeeded AS migrationNeeded
 -- #    }
 -- #  }
 -- #}
