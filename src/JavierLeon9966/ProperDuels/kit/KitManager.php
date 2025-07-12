@@ -28,14 +28,27 @@ final readonly class KitManager{
 	 */
 	public static function create(RawQueries $queries, DatabaseType $type, ?Closure $extraSetup = null): Generator{
 		$kitManager = new self($queries);
-		$gen = $queries->initKits();
 		if($type === DatabaseType::Sqlite3){
-			yield from $queries->initForeignKeys();
-			yield from $gen;
-			return $kitManager;
+			yield from $kitManager->sqlite3Init();
+		}else{
+			yield from $kitManager->mysqlInit();
 		}
+		if($extraSetup !== null){
+			yield from $extraSetup($kitManager);
+		}
+		return $kitManager;
+	}
+
+	/** @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, void> */
+	private function sqlite3Init(): Generator{
+		yield from $this->queries->initForeignKeys();
+		yield from $this->queries->initKits();
+	}
+
+	/** @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, void> */
+	private function mysqlInit(): Generator{
 		try{
-			yield from $gen;
+			yield from $this->queries->initKits();
 		}catch(SqlError $e){
 			if(preg_match('/^procedure [^ ]+ already exists$/i', $e->getErrorMessage()) === 1){
 				// ignore
@@ -46,24 +59,20 @@ final readonly class KitManager{
 
 		try{
 			/** @var list<array{Name: string, Kit: string}> $rows */
-			$rows = yield from $queries->loadOldKits();
+			$rows = yield from $this->queries->loadOldKits();
 		}catch(SqlError $e){
 			if(str_contains(strtolower($e->getMessage()), 'unknown column')){
-				return $kitManager;
+				return;
 			}else{
 				throw new AssumptionFailedError('This should never happen', 0, $e);
 			}
 		}
 		/** @var int<0, 1> $migrationNeeded */
-		[['migrationNeeded' => $migrationNeeded]] = yield from $queries->checkForMigrationKits();
+		[['migrationNeeded' => $migrationNeeded]] = yield from $this->queries->checkForMigrationKits();
 		if($migrationNeeded === 0){
-			return $kitManager;
+			return;
 		}
-		yield from $kitManager->migrateOldRows($rows);
-		if($extraSetup !== null){
-			yield from $extraSetup($kitManager);
-		}
-		return $kitManager;
+		yield from $this->migrateOldRows($rows);
 	}
 
 	/**
