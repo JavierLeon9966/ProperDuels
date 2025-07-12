@@ -21,7 +21,7 @@ final readonly class Kit{
 	 * @param array<int, Item> $armor
 	 * @param array<int, Item> $inventory
 	 */
-	public function __construct(private string $name, array $armor, array $inventory){
+	public function __construct(private string $name, array $armor, array $inventory, private bool $enabled = true){
 		Utils::validateArrayValueType(array_merge($armor, $inventory), static function(Item $_): void{});
 		$this->armor = Utils::cloneObjectArray($armor);
 		$this->inventory = Utils::cloneObjectArray($inventory);
@@ -39,6 +39,10 @@ final readonly class Kit{
 
 	public function getName(): string{
 		return $this->name;
+	}
+
+	public function isEnabled(): bool{
+		return $this->enabled;
 	}
 
 	/** @param array{armor: array<int, array<array-key, mixed>>, inventory: array<int, array<array-key, mixed>>, name: string} $data */

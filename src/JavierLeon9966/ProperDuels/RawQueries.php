@@ -10,16 +10,16 @@ declare(strict_types=1);
 namespace JavierLeon9966\ProperDuels;
 
 use Generator;
-use JavierLeon9966\ProperDuels\libs\_3b83941958c6d0cd\poggit\libasynql\DataConnector;
-use JavierLeon9966\ProperDuels\libs\_3b83941958c6d0cd\SOFe\AwaitGenerator\Await;
+use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\poggit\libasynql\DataConnector;
+use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\SOFe\AwaitGenerator\Await;
 
 final class RawQueries{
 	public function __construct(private DataConnector $conn) {}
 
 	/**
 	 * <h4>Declared in:</h4>
-	 * - ./resources/mysql/stmt.sql:279
-	 * - ./resources/sqlite/stmt.sql:139
+	 * - ./resources/mysql/stmt.sql:294
+	 * - ./resources/sqlite/stmt.sql:150
 	 * @return Generator<mixed, 'all'|'once'|'race'|'reject'|'resolve'|array{'resolve'}|Generator<mixed, mixed, mixed, mixed>|null, mixed, list<array<string, mixed>>>
 	 */
 	public function checkForMigrationArenas() : Generator {
@@ -29,7 +29,8 @@ final class RawQueries{
 
 	/**
 	 * <h4>Declared in:</h4>
-	 * - ./resources/mysql/stmt.sql:274
+	 * - ./resources/mysql/stmt.sql:289
+	 * - ./resources/sqlite/stmt.sql:142
 	 * @return Generator<mixed, 'all'|'once'|'race'|'reject'|'resolve'|array{'resolve'}|Generator<mixed, mixed, mixed, mixed>|null, mixed, list<array<string, mixed>>>
 	 */
 	public function checkForMigrationKits() : Generator {
@@ -39,8 +40,8 @@ final class RawQueries{
 
 	/**
 	 * <h4>Declared in:</h4>
-	 * - ./resources/mysql/stmt.sql:229
-	 * - ./resources/sqlite/stmt.sql:91
+	 * - ./resources/mysql/stmt.sql:242
+	 * - ./resources/sqlite/stmt.sql:92
 	 * @param string $name
 	 * @return Generator<mixed, 'all'|'once'|'race'|'reject'|'resolve'|array{'resolve'}|Generator<mixed, mixed, mixed, mixed>|null, mixed, int>
 	 */
@@ -51,8 +52,8 @@ final class RawQueries{
 
 	/**
 	 * <h4>Declared in:</h4>
-	 * - ./resources/mysql/stmt.sql:224
-	 * - ./resources/sqlite/stmt.sql:86
+	 * - ./resources/mysql/stmt.sql:237
+	 * - ./resources/sqlite/stmt.sql:87
 	 * @param string $name
 	 * @return Generator<mixed, 'all'|'once'|'race'|'reject'|'resolve'|array{'resolve'}|Generator<mixed, mixed, mixed, mixed>|null, mixed, int>
 	 */
@@ -63,8 +64,8 @@ final class RawQueries{
 
 	/**
 	 * <h4>Declared in:</h4>
-	 * - ./resources/mysql/stmt.sql:241
-	 * - ./resources/sqlite/stmt.sql:103
+	 * - ./resources/mysql/stmt.sql:255
+	 * - ./resources/sqlite/stmt.sql:105
 	 * @param string $name
 	 * @return Generator<mixed, 'all'|'once'|'race'|'reject'|'resolve'|array{'resolve'}|Generator<mixed, mixed, mixed, mixed>|null, mixed, list<array<string, mixed>>>
 	 */
@@ -75,8 +76,8 @@ final class RawQueries{
 
 	/**
 	 * <h4>Declared in:</h4>
-	 * - ./resources/mysql/stmt.sql:236
-	 * - ./resources/sqlite/stmt.sql:98
+	 * - ./resources/mysql/stmt.sql:250
+	 * - ./resources/sqlite/stmt.sql:100
 	 * @param string $name
 	 * @return Generator<mixed, 'all'|'once'|'race'|'reject'|'resolve'|array{'resolve'}|Generator<mixed, mixed, mixed, mixed>|null, mixed, list<array<string, mixed>>>
 	 */
@@ -87,8 +88,8 @@ final class RawQueries{
 
 	/**
 	 * <h4>Declared in:</h4>
-	 * - ./resources/mysql/stmt.sql:248
-	 * - ./resources/sqlite/stmt.sql:110
+	 * - ./resources/mysql/stmt.sql:262
+	 * - ./resources/sqlite/stmt.sql:112
 	 * @return Generator<mixed, 'all'|'once'|'race'|'reject'|'resolve'|array{'resolve'}|Generator<mixed, mixed, mixed, mixed>|null, mixed, list<array<string, mixed>>>
 	 */
 	public function getRandomArena() : Generator {
@@ -98,8 +99,8 @@ final class RawQueries{
 
 	/**
 	 * <h4>Declared in:</h4>
-	 * - ./resources/mysql/stmt.sql:253
-	 * - ./resources/sqlite/stmt.sql:115
+	 * - ./resources/mysql/stmt.sql:268
+	 * - ./resources/sqlite/stmt.sql:118
 	 * @return Generator<mixed, 'all'|'once'|'race'|'reject'|'resolve'|array{'resolve'}|Generator<mixed, mixed, mixed, mixed>|null, mixed, list<array<string, mixed>>>
 	 */
 	public function getRandomKit() : Generator {
@@ -109,8 +110,8 @@ final class RawQueries{
 
 	/**
 	 * <h4>Declared in:</h4>
-	 * - ./resources/mysql/stmt.sql:167
-	 * - ./resources/sqlite/stmt.sql:29
+	 * - ./resources/mysql/stmt.sql:180
+	 * - ./resources/sqlite/stmt.sql:30
 	 * @return Generator<mixed, 'all'|'once'|'race'|'reject'|'resolve'|array{'resolve'}|Generator<mixed, mixed, mixed, mixed>|null, mixed, int>
 	 */
 	public function initArenas() : Generator {
@@ -130,8 +131,8 @@ final class RawQueries{
 
 	/**
 	 * <h4>Declared in:</h4>
-	 * - ./resources/mysql/stmt.sql:58
-	 * - ./resources/sqlite/stmt.sql:14
+	 * - ./resources/mysql/stmt.sql:71
+	 * - ./resources/sqlite/stmt.sql:15
 	 * @return Generator<mixed, 'all'|'once'|'race'|'reject'|'resolve'|array{'resolve'}|Generator<mixed, mixed, mixed, mixed>|null, mixed, int>
 	 */
 	public function initKits() : Generator {
@@ -141,8 +142,8 @@ final class RawQueries{
 
 	/**
 	 * <h4>Declared in:</h4>
-	 * - ./resources/mysql/stmt.sql:267
-	 * - ./resources/sqlite/stmt.sql:129
+	 * - ./resources/mysql/stmt.sql:282
+	 * - ./resources/sqlite/stmt.sql:132
 	 * @param int $offset
 	 * @param int $limit
 	 * @return Generator<mixed, 'all'|'once'|'race'|'reject'|'resolve'|array{'resolve'}|Generator<mixed, mixed, mixed, mixed>|null, mixed, list<array<string, mixed>>>
@@ -154,8 +155,8 @@ final class RawQueries{
 
 	/**
 	 * <h4>Declared in:</h4>
-	 * - ./resources/mysql/stmt.sql:261
-	 * - ./resources/sqlite/stmt.sql:123
+	 * - ./resources/mysql/stmt.sql:276
+	 * - ./resources/sqlite/stmt.sql:126
 	 * @param int $offset
 	 * @param int $limit
 	 * @return Generator<mixed, 'all'|'once'|'race'|'reject'|'resolve'|array{'resolve'}|Generator<mixed, mixed, mixed, mixed>|null, mixed, list<array<string, mixed>>>
@@ -167,7 +168,7 @@ final class RawQueries{
 
 	/**
 	 * <h4>Declared in:</h4>
-	 * - ./resources/sqlite/stmt.sql:37
+	 * - ./resources/sqlite/stmt.sql:38
 	 * @return Generator<mixed, 'all'|'once'|'race'|'reject'|'resolve'|array{'resolve'}|Generator<mixed, mixed, mixed, mixed>|null, mixed, list<array<string, mixed>>>
 	 */
 	public function loadArenas() : Generator {
@@ -177,7 +178,7 @@ final class RawQueries{
 
 	/**
 	 * <h4>Declared in:</h4>
-	 * - ./resources/sqlite/stmt.sql:34
+	 * - ./resources/sqlite/stmt.sql:35
 	 * @return Generator<mixed, 'all'|'once'|'race'|'reject'|'resolve'|array{'resolve'}|Generator<mixed, mixed, mixed, mixed>|null, mixed, list<array<string, mixed>>>
 	 */
 	public function loadKits() : Generator {
@@ -187,7 +188,7 @@ final class RawQueries{
 
 	/**
 	 * <h4>Declared in:</h4>
-	 * - ./resources/mysql/stmt.sql:175
+	 * - ./resources/mysql/stmt.sql:188
 	 * @return Generator<mixed, 'all'|'once'|'race'|'reject'|'resolve'|array{'resolve'}|Generator<mixed, mixed, mixed, mixed>|null, mixed, list<array<string, mixed>>>
 	 */
 	public function loadOldArenas() : Generator {
@@ -197,7 +198,7 @@ final class RawQueries{
 
 	/**
 	 * <h4>Declared in:</h4>
-	 * - ./resources/mysql/stmt.sql:172
+	 * - ./resources/mysql/stmt.sql:185
 	 * @return Generator<mixed, 'all'|'once'|'race'|'reject'|'resolve'|array{'resolve'}|Generator<mixed, mixed, mixed, mixed>|null, mixed, list<array<string, mixed>>>
 	 */
 	public function loadOldKits() : Generator {
@@ -207,7 +208,7 @@ final class RawQueries{
 
 	/**
 	 * <h4>Declared in:</h4>
-	 * - ./resources/sqlite/stmt.sql:175
+	 * - ./resources/sqlite/stmt.sql:190
 	 * @return Generator<mixed, 'all'|'once'|'race'|'reject'|'resolve'|array{'resolve'}|Generator<mixed, mixed, mixed, mixed>|null, mixed, int>
 	 */
 	public function migrateArenas() : Generator {
@@ -217,8 +218,18 @@ final class RawQueries{
 
 	/**
 	 * <h4>Declared in:</h4>
-	 * - ./resources/mysql/stmt.sql:217
-	 * - ./resources/sqlite/stmt.sql:79
+	 * - ./resources/sqlite/stmt.sql:156
+	 * @return Generator<mixed, 'all'|'once'|'race'|'reject'|'resolve'|array{'resolve'}|Generator<mixed, mixed, mixed, mixed>|null, mixed, int>
+	 */
+	public function migrateKits() : Generator {
+		$this->conn->executeChange("properduels.migrate.kits", [], yield Await::RESOLVE, yield Await::REJECT);
+		return yield Await::ONCE;
+	}
+
+	/**
+	 * <h4>Declared in:</h4>
+	 * - ./resources/mysql/stmt.sql:230
+	 * - ./resources/sqlite/stmt.sql:80
 	 * @param string $name
 	 * @param string $levelName
 	 * @param float $firstSpawnPosX
@@ -237,8 +248,8 @@ final class RawQueries{
 
 	/**
 	 * <h4>Declared in:</h4>
-	 * - ./resources/mysql/stmt.sql:184
-	 * - ./resources/sqlite/stmt.sql:46
+	 * - ./resources/mysql/stmt.sql:197
+	 * - ./resources/sqlite/stmt.sql:47
 	 * @param string $name
 	 * @param string $armor
 	 * @param string $inventory
@@ -251,15 +262,28 @@ final class RawQueries{
 
 	/**
 	 * <h4>Declared in:</h4>
-	 * - ./resources/mysql/stmt.sql:292
-	 * - ./resources/sqlite/stmt.sql:188
+	 * - ./resources/mysql/stmt.sql:316
+	 * - ./resources/sqlite/stmt.sql:212
+	 * @param string $name
+	 * @param bool $enabled
+	 * @return Generator<mixed, 'all'|'once'|'race'|'reject'|'resolve'|array{'resolve'}|Generator<mixed, mixed, mixed, mixed>|null, mixed, int>
+	 */
+	public function setEnabledKit(string $name, bool $enabled, ) : Generator {
+		$this->conn->executeChange("properduels.set_enabled.kit", ["name" => $name, "enabled" => $enabled, ], yield Await::RESOLVE, yield Await::REJECT);
+		return yield Await::ONCE;
+	}
+
+	/**
+	 * <h4>Declared in:</h4>
+	 * - ./resources/mysql/stmt.sql:307
+	 * - ./resources/sqlite/stmt.sql:203
 	 * @param string $name
 	 * @param string $armor
 	 * @param string $inventory
-	 * @param ?string $newName
+	 * @param string $newName
 	 * @return Generator<mixed, 'all'|'once'|'race'|'reject'|'resolve'|array{'resolve'}|Generator<mixed, mixed, mixed, mixed>|null, mixed, int>
 	 */
-	public function updateKit(string $name, string $armor, string $inventory, ?string $newName, ) : Generator {
+	public function updateKit(string $name, string $armor, string $inventory, string $newName, ) : Generator {
 		$this->conn->executeChange("properduels.update.kit", ["name" => $name, "armor" => $armor, "inventory" => $inventory, "newName" => $newName, ], yield Await::RESOLVE, yield Await::REJECT);
 		return yield Await::ONCE;
 	}

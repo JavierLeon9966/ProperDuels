@@ -10,9 +10,9 @@ use JavierLeon9966\ProperDuels\config\DatabaseType;
 use JavierLeon9966\ProperDuels\RawQueries;
 use pocketmine\math\Vector3;
 use pocketmine\utils\AssumptionFailedError;
-use JavierLeon9966\ProperDuels\libs\_3b83941958c6d0cd\poggit\libasynql\SqlError;
+use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\poggit\libasynql\SqlError;
 use RuntimeException;
-use JavierLeon9966\ProperDuels\libs\_3b83941958c6d0cd\SOFe\AwaitGenerator\Await;
+use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\SOFe\AwaitGenerator\Await;
 
 final readonly class ArenaManager{
 
@@ -25,17 +25,30 @@ final readonly class ArenaManager{
 	 */
 	public static function create(RawQueries $queries, DatabaseType $databaseType, ?Closure $extraSetup = null): Generator{
 		$arenaManager = new self($queries);
-		$gen = $queries->initArenas();
 		if($databaseType === DatabaseType::Sqlite3){
-			/** @var array{array{'migrationNeeded': int<0, 1>}} $rows */
-			[$rows, ] = yield from Await::all([$queries->checkForMigrationArenas(), $gen]);
-			if($rows[0]['migrationNeeded'] === 1){
-				yield from $queries->migrateArenas();
-			}
-			return $arenaManager;
+			yield from $arenaManager->sqlite3Init();
+		}else{
+			yield from $arenaManager->mysqlInit();
 		}
+		if($extraSetup !== null){
+			yield from $extraSetup($arenaManager);
+		}
+		return $arenaManager;
+	}
+
+	/** @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, void> */
+	private function sqlite3Init(): Generator{
+		/** @var array{array{'migrationNeeded': int<0, 1>}} $rows */
+		[$rows,] = yield from Await::all([$this->queries->checkForMigrationArenas(), $this->queries->initArenas()]);
+		if($rows[0]['migrationNeeded'] === 1){
+			yield from $this->queries->migrateArenas();
+		}
+	}
+
+	/** @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, void> */
+	private function mysqlInit(): Generator{
 		try{
-			yield from $gen;
+			yield from $this->queries->initArenas();
 		}catch(SqlError $e){
 			if(preg_match('/^procedure [^ ]+ already exists$/i', $e->getErrorMessage()) === 1){
 				// ignore
@@ -45,25 +58,22 @@ final readonly class ArenaManager{
 		}
 
 		try{
-			/** @var list<array{Name: string, Arena: string}> $rows */
-			$rows = yield from $queries->loadOldArenas();
+			/**
+			 * @var array{array{'migrationNeeded': int<0, 1>}} $migrationRows
+			 * @var list<array{Name: string, Arena: string}> $rows
+			 */
+			[$migrationRows, $rows] = yield from Await::all([$this->queries->checkForMigrationArenas(), $this->queries->loadOldArenas()]);
+			if($migrationRows[0]['migrationNeeded'] === 0){
+				return;
+			}
 		}catch(SqlError $e){
 			if(str_contains(strtolower($e->getMessage()), 'unknown column')){
-				return $arenaManager;
+				return;
 			}else{
 				throw new AssumptionFailedError('This should never happen', 0, $e);
 			}
 		}
-		/** @var int<0, 1> $migrationNeeded */
-		[['migrationNeeded' => $migrationNeeded]] = yield from $queries->checkForMigrationArenas();
-		if($migrationNeeded === 0){
-			return $arenaManager;
-		}
-		yield from $arenaManager->migrateOldRows($rows);
-		if($extraSetup !== null){
-			yield from $extraSetup($arenaManager);
-		}
-		return $arenaManager;
+		yield from $this->migrateOldRows($rows);
 	}
 
 	/**

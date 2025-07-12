@@ -1,10 +1,8 @@
 name: ProperDuels
 main: JavierLeon9966\ProperDuels\ProperDuels
 author: JavierLeon9966
-version: 2.10.0
+version: 3.0.0
 api: 5.0.0
-extensions:
-  Core: ">=8.3"
 mcpe-protocols: [594, 618, 622, 630, 649, 662, 671, 685, 712, 729, 748, 776, 786, 800, 818, 819]
 description: A properly made duels plugin for PocketMine-MP
 website: https://github.com/JavierLeon9966/ProperDuels
@@ -41,4 +39,10 @@ permissions:
     default: op
   properduels.command.kit.update:
     description: Allows the user to update kits
+    default: op
+  properduels.command.kit.enable:
+    description: Allows the user to enable kits
+    default: op
+  properduels.command.kit.disable:
+    description: Allows the user to disable kits
     default: op

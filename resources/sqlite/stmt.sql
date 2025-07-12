@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS Kits(
   Name VARCHAR(32) NOT NULL,
   Armor LONGBLOB NOT NULL,
   Inventory LONGBLOB NOT NULL,
+  Enabled BIT DEFAULT 1 NOT NULL,
   PRIMARY KEY(Name)
 );
 -- #    }
@@ -94,7 +95,8 @@ WHERE Name =:name;
 -- #    { kit
 -- #      :name string
 SELECT * FROM Kits
-WHERE Name = :name;
+WHERE Name = :name
+  AND Enabled = 1;
 -- #    }
 -- #    { arena
 -- #      :name string
@@ -110,6 +112,7 @@ LIMIT 1;
 -- #    }
 -- #    { kit
 SELECT * FROM Kits
+WHERE Enabled = 1
 ORDER BY RANDOM()
 LIMIT 1;
 -- #    }
@@ -129,6 +132,14 @@ LIMIT :limit OFFSET :offset;
 -- #    }
 -- #  }
 -- #  { check_for_migration
+-- #    { kits
+SELECT
+    EXISTS(
+        SELECT 1
+        FROM pragma_table_info('Kits')
+        WHERE name='Enabled'
+    ) AS migrationNeeded;
+-- #    }
 -- #    { arenas
 SELECT
     EXISTS(
@@ -139,6 +150,10 @@ SELECT
 -- #    }
 -- #  }
 -- #  { migrate
+-- #    { kits
+ALTER TABLE Kits
+    ADD COLUMN Enabled INTEGER NOT NULL DEFAULT 1;
+-- #    }
 -- #    { arenas
 PRAGMA foreign_keys = OFF;
 -- # &
@@ -184,6 +199,15 @@ UPDATE Kits
 SET Armor = :armor,
     Inventory = :inventory,
     Name = :newName
+WHERE Name = :name;
+-- #    }
+-- #  }
+-- #  { set_enabled
+-- #    { kit
+-- #      :name string
+-- #      :enabled bool
+UPDATE Kits
+SET Enabled = :enabled
 WHERE Name = :name;
 -- #    }
 -- #  }

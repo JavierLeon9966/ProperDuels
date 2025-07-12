@@ -4,9 +4,9 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels\command\arena\subcommand;
 
-use JavierLeon9966\ProperDuels\libs\_3b83941958c6d0cd\CortexPE\Commando\args\IntegerArgument;
-use JavierLeon9966\ProperDuels\libs\_3b83941958c6d0cd\CortexPE\Commando\BaseSubCommand;
-use JavierLeon9966\ProperDuels\libs\_3b83941958c6d0cd\CortexPE\Commando\exception\ArgumentOrderException;
+use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\CortexPE\Commando\args\IntegerArgument;
+use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\CortexPE\Commando\BaseSubCommand;
+use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\CortexPE\Commando\exception\ArgumentOrderException;
 use Generator;
 use JavierLeon9966\ProperDuels\arena\ArenaManager;
 use pocketmine\command\CommandSender;
@@ -15,7 +15,7 @@ use pocketmine\plugin\PluginBase;
 use pocketmine\utils\AssumptionFailedError;
 use pocketmine\utils\Limits;
 use pocketmine\utils\TextFormat;
-use JavierLeon9966\ProperDuels\libs\_3b83941958c6d0cd\SOFe\AwaitGenerator\Await;
+use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\SOFe\AwaitGenerator\Await;
 
 class ListSubCommand extends BaseSubCommand{
 

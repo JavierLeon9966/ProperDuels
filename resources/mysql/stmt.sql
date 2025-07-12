@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS Kits(
   Name VARCHAR(32) NOT NULL,
   Armor LONGBLOB NOT NULL,
   Inventory LONGBLOB NOT NULL,
+  Enabled TINYINT DEFAULT 1 NOT NULL,
   PRIMARY KEY(Name)
 );
 -- # &
@@ -45,11 +46,23 @@ BEGIN
                 Name VARCHAR(32) NOT NULL,
                 Armor LONGBLOB NOT NULL,
                 Inventory LONGBLOB NOT NULL,
+                Enabled TINYINT DEFAULT 1 NOT NULL,
                 PRIMARY KEY(Name)
             );
             COMMIT;
 
             SET migrated = 1;
+        ELSE
+            SELECT COUNT(*)
+            INTO col_count
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME   = 'Kits'
+              AND COLUMN_NAME  = 'Enabled';
+
+            IF col_count = 0 THEN
+                ALTER TABLE Kits ADD COLUMN Enabled TINYINT NOT NULL DEFAULT 1;
+            END IF;
         END IF;
 
         DO RELEASE_LOCK('kits_old_table_migration_lock');
@@ -232,7 +245,8 @@ WHERE Name = :name;
 -- #    { kit
 -- #      :name string
 SELECT * FROM Kits
-WHERE Name = :name;
+WHERE Name = :name
+  AND Enabled = 1;
 -- #    }
 -- #    { arena
 -- #      :name string
@@ -248,6 +262,7 @@ LIMIT 1;
 -- #    }
 -- #    { kit
 SELECT * FROM Kits
+WHERE Enabled = 1
 ORDER BY RAND()
 LIMIT 1;
 -- #    }
@@ -288,6 +303,15 @@ UPDATE Kits
 SET Armor = :armor,
     Inventory = :inventory,
     Name = :newName
+WHERE Name = :name;
+-- #    }
+-- #  }
+-- #  { set_enabled
+-- #    { kit
+-- #      :name string
+-- #      :enabled bool
+UPDATE Kits
+SET Enabled = :enabled
 WHERE Name = :name;
 -- #    }
 -- #  }
