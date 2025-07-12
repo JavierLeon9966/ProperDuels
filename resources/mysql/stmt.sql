@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS Arenas(
   SecondSpawnPosZ DOUBLE NOT NULL,
   Kit VARCHAR(32),
   PRIMARY KEY(Name),
-  FOREIGN KEY(Kit) REFERENCES Kits(Name) ON DELETE SET NULL
+  FOREIGN KEY(Kit) REFERENCES Kits(Name) ON DELETE SET NULL ON UPDATE CASCADE
 );
 -- # &
 CREATE PROCEDURE MigrateArenas(OUT migrated TINYINT)
@@ -76,6 +76,9 @@ BEGIN
     DECLARE got_lock    TINYINT DEFAULT 0;
     DECLARE col_count   INT     DEFAULT 0;
     DECLARE good_count  INT     DEFAULT 0;
+    DECLARE v_fk_name       VARCHAR(64);
+    DECLARE v_update_action VARCHAR(30);
+    DECLARE v_delete_action VARCHAR(30);
 
     DECLARE CONTINUE HANDLER FOR SQLEXCEPTION
         BEGIN
@@ -114,11 +117,48 @@ BEGIN
                 SecondSpawnPosZ  DOUBLE       NOT NULL,
                 Kit              VARCHAR(32),
                 PRIMARY KEY (Name),
-                FOREIGN KEY (Kit) REFERENCES Kits(Name) ON DELETE SET NULL
+                FOREIGN KEY (Kit) REFERENCES Kits(Name) ON DELETE SET NULL ON UPDATE CASCADE
             );
             COMMIT;
 
             SET migrated = 1;
+        ELSE
+            SELECT rc.CONSTRAINT_NAME,
+                   rc.UPDATE_RULE,
+                   rc.DELETE_RULE
+            INTO v_fk_name, v_update_action, v_delete_action
+            FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS AS rc
+                     JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS kcu
+                          ON rc.CONSTRAINT_SCHEMA = kcu.CONSTRAINT_SCHEMA
+                              AND rc.CONSTRAINT_NAME  = kcu.CONSTRAINT_NAME
+            WHERE rc.CONSTRAINT_SCHEMA = DATABASE()
+              AND kcu.TABLE_NAME       = 'Arenas'
+              AND kcu.COLUMN_NAME      = 'Kit'
+            LIMIT 1;
+
+            IF v_update_action <> 'CASCADE' THEN
+                START TRANSACTION;
+                SET @sql_drop = CONCAT(
+                        'ALTER TABLE `Arenas` ',
+                        'DROP FOREIGN KEY `', v_fk_name, '`;'
+                                );
+                PREPARE stmt1 FROM @sql_drop;
+                EXECUTE stmt1;
+                DEALLOCATE PREPARE stmt1;
+
+                SET @sql_add = CONCAT(
+                        'ALTER TABLE `Arenas` ',
+                        'ADD CONSTRAINT `', v_fk_name, '` ',
+                        'FOREIGN KEY (`Kit`) ',
+                        'REFERENCES `Kits`(`Name`) ',
+                        'ON DELETE ', v_delete_action, ' ',
+                        'ON UPDATE CASCADE;'
+                               );
+                PREPARE stmt2 FROM @sql_add;
+                EXECUTE stmt2;
+                DEALLOCATE PREPARE stmt2;
+                COMMIT;
+            END IF;
         END IF;
 
         DO RELEASE_LOCK('arenas_old_table_migration_lock');
@@ -235,7 +275,20 @@ SELECT @migrationNeeded AS migrationNeeded;
 -- #    { arenas
 CALL MigrateArenas(@migrationNeeded);
 -- # &
-SELECT @migrationNeeded AS migrationNeeded
+SELECT @migrationNeeded AS migrationNeeded;
+-- #    }
+-- #  }
+-- #  { update
+-- #    { kit
+-- #      :name string
+-- #      :armor string
+-- #      :inventory string
+-- #      :newName string
+UPDATE Kits
+SET Armor = :armor,
+    Inventory = :inventory,
+    Name = :newName
+WHERE Name = :name;
 -- #    }
 -- #  }
 -- #}

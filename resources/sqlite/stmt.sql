@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS Arenas(
   SecondSpawnPosZ DOUBLE NOT NULL,
   Kit VARCHAR(32),
   PRIMARY KEY(Name),
-  FOREIGN KEY(Kit) REFERENCES Kits(Name) ON DELETE SET NULL
+  FOREIGN KEY(Kit) REFERENCES Kits(Name) ON DELETE SET NULL ON UPDATE CASCADE
 );
 -- #    }
 -- #  }
@@ -126,6 +126,65 @@ LIMIT :limit OFFSET :offset;
 -- #      :limit int
 SELECT * FROM Arenas
 LIMIT :limit OFFSET :offset;
+-- #    }
+-- #  }
+-- #  { check_for_migration
+-- #    { arenas
+SELECT
+    EXISTS(
+        SELECT 1
+        FROM pragma_foreign_key_list('Arenas')
+        WHERE on_update <> 'CASCADE'
+    ) AS migrationNeeded;
+-- #    }
+-- #  }
+-- #  { migrate
+-- #    { arenas
+PRAGMA foreign_keys = OFF;
+-- # &
+SAVEPOINT migrate_arena_fk;
+-- # &
+CREATE TABLE IF NOT EXISTS Arenas_new (
+    Name            VARCHAR(32)  NOT NULL PRIMARY KEY,
+    LevelName       VARCHAR(64)  NOT NULL,
+    FirstSpawnPosX  DOUBLE       NOT NULL,
+    FirstSpawnPosY  DOUBLE       NOT NULL,
+    FirstSpawnPosZ  DOUBLE       NOT NULL,
+    SecondSpawnPosX DOUBLE       NOT NULL,
+    SecondSpawnPosY DOUBLE       NOT NULL,
+    SecondSpawnPosZ DOUBLE       NOT NULL,
+    Kit             VARCHAR(32),
+    FOREIGN KEY(Kit)
+        REFERENCES Kits(Name)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
+);
+-- # &
+INSERT INTO Arenas_new
+SELECT * FROM Arenas;
+-- # &
+ALTER TABLE Arenas RENAME TO Arenas_old;
+-- # &
+ALTER TABLE Arenas_new RENAME TO Arenas;
+-- # &
+DROP TABLE IF EXISTS Arenas_old;
+-- # &
+RELEASE migrate_arena_fk;
+-- # &
+PRAGMA foreign_keys = ON;
+-- #    }
+-- #  }
+-- #  { update
+-- #    { kit
+-- #      :name string
+-- #      :armor string
+-- #      :inventory string
+-- #      :newName string
+UPDATE Kits
+SET Armor = :armor,
+    Inventory = :inventory,
+    Name = :newName
+WHERE Name = :name;
 -- #    }
 -- #  }
 -- #}

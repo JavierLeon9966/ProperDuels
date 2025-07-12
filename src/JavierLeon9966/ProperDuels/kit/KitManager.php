@@ -131,6 +131,27 @@ final readonly class KitManager{
 		return $changedRows > 0;
 	}
 
+	/** @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, \JavierLeon9966\ProperDuels\kit\KitUpdateStatus> */
+	public function update(string $kitName, Kit $kit): Generator{
+		/**
+		 * @var ?Kit $oldKit
+		 * @var int<0, 1> $changedRows
+		 */
+		[$oldKit, $changedRows] = yield from Await::all([$this->get($kitName), $this->queries->updateKit(
+			$kitName,
+			ContentsSerializer::serializeItemContents($kit->getArmor()),
+			ContentsSerializer::serializeItemContents($kit->getInventory()),
+			$kit->getName()
+		)]);
+		if($oldKit === null){
+			return KitUpdateStatus::NOT_FOUND;
+		}
+		if($changedRows === 0){
+			return KitUpdateStatus::NO_CHANGES;
+		}
+		return KitUpdateStatus::SUCCESS;
+	}
+
 	/** @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, list<Kit>> */
 	public function getList(int $offset, int $limit): Generator{
 		/** @var list<array{'Name': string, 'Armor': string, 'Inventory': string}> $rows */

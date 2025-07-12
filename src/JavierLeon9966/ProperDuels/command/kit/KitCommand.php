@@ -5,7 +5,10 @@ declare(strict_types = 1);
 namespace JavierLeon9966\ProperDuels\command\kit;
 
 use CortexPE\Commando\BaseCommand;
-use JavierLeon9966\ProperDuels\command\kit\subcommand\{CreateSubCommand, DeleteSubCommand, ListSubCommand};
+use JavierLeon9966\ProperDuels\command\kit\subcommand\{CreateSubCommand,
+	DeleteSubCommand,
+	ListSubCommand,
+	UpdateSubCommand};
 use JavierLeon9966\ProperDuels\kit\KitManager;
 use pocketmine\command\CommandSender;
 use pocketmine\plugin\PluginBase;
@@ -32,5 +35,6 @@ class KitCommand extends BaseCommand{
 		$this->registerSubCommand(new CreateSubCommand($plugin, 'create', $this->kitManager));
 		$this->registerSubCommand(new DeleteSubCommand($plugin, 'delete', $this->kitManager));
 		$this->registerSubCommand(new ListSubCommand($plugin, 'list', $this->kitManager));
+		$this->registerSubCommand(new UpdateSubCommand($plugin, 'update', $this->kitManager));
 	}
 }

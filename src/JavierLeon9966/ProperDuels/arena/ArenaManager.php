@@ -27,7 +27,11 @@ final readonly class ArenaManager{
 		$arenaManager = new self($queries);
 		$gen = $queries->initArenas();
 		if($databaseType === DatabaseType::Sqlite3){
-			yield from $gen;
+			/** @var array{array{'migrationNeeded': int<0, 1>}} $rows */
+			[$rows, ] = yield from Await::all([$queries->checkForMigrationArenas(), $gen]);
+			if($rows[0]['migrationNeeded'] === 1){
+				yield from $queries->migrateArenas();
+			}
 			return $arenaManager;
 		}
 		try{
