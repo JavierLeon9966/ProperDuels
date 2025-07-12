@@ -36,7 +36,7 @@ class ListSubCommand extends BaseSubCommand{
 			}
 			$sender->sendMessage(TextFormat::GREEN."Kits (Page $page):");
 			foreach($kits as $kit){
-				$sender->sendMessage(TextFormat::YELLOW . "- {$kit->getName()}");
+				$sender->sendMessage(TextFormat::YELLOW . "- {$kit->getName()}, " . ($kit->isEnabled() ? TextFormat::GREEN . "Enabled" : TextFormat::RED . "Disabled"));
 			}
 		});
 	}

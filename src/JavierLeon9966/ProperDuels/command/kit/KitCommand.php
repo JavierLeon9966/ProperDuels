@@ -7,6 +7,8 @@ namespace JavierLeon9966\ProperDuels\command\kit;
 use CortexPE\Commando\BaseCommand;
 use JavierLeon9966\ProperDuels\command\kit\subcommand\{CreateSubCommand,
 	DeleteSubCommand,
+	DisableSubCommand,
+	EnableSubCommand,
 	ListSubCommand,
 	UpdateSubCommand};
 use JavierLeon9966\ProperDuels\kit\KitManager;
@@ -28,7 +30,9 @@ class KitCommand extends BaseCommand{
 		$this->setPermissions([
 			'properduels.command.kit.create',
 			'properduels.command.kit.delete',
-			'properduels.command.kit.list'
+			'properduels.command.kit.list',
+			'properduels.command.kit.enable',
+			'properduels.command.kit.disable'
 		]);
 		$plugin = $this->getOwningPlugin();
 		assert($plugin instanceof PluginBase);
@@ -36,5 +40,7 @@ class KitCommand extends BaseCommand{
 		$this->registerSubCommand(new DeleteSubCommand($plugin, 'delete', $this->kitManager));
 		$this->registerSubCommand(new ListSubCommand($plugin, 'list', $this->kitManager));
 		$this->registerSubCommand(new UpdateSubCommand($plugin, 'update', $this->kitManager));
+		$this->registerSubCommand(new EnableSubCommand($plugin, 'enable', $this->kitManager));
+		$this->registerSubCommand(new DisableSubCommand($plugin, 'disable', $this->kitManager));
 	}
 }

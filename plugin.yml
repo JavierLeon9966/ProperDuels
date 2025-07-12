@@ -40,3 +40,9 @@ permissions:
   properduels.command.kit.update:
     description: Allows the user to update kits
     default: op
+  properduels.command.kit.enable:
+    description: Allows the user to enable kits
+    default: op
+  properduels.command.kit.disable:
+    description: Allows the user to disable kits
+    default: op
