@@ -8,6 +8,7 @@ ProperDuels is a plugin that adds a duel system into your server. No need to wor
 - Simple commands
 - SQL Database
 - Queue system
+- Low memory overhead
 
 ## Commands
 
@@ -28,4 +29,7 @@ Duel players and queue to a match.
 Manage kits for duel matches.
 - /kit create <kit: string>
 - /kit delete <kit: string>
+- /kit update <kit: string> [newName: string]
+- /kit enable <kit: string>
+- /kit disable <kit: string>
 - /kit list
