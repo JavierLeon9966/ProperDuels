@@ -19,9 +19,9 @@ use pocketmine\utils\AssumptionFailedError;
 use pocketmine\utils\Utils;
 use pocketmine\world\Position;
 use pocketmine\world\WorldManager;
-use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\SOFe\AwaitGenerator\Await;
-use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\SOFe\InfoAPI\InfoAPI;
-use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\SOFe\Zleep\Zleep;
+use JavierLeon9966\ProperDuels\libs\_b71f10ec8387eb2c\SOFe\AwaitGenerator\Await;
+use JavierLeon9966\ProperDuels\libs\_b71f10ec8387eb2c\SOFe\InfoAPI\InfoAPI;
+use JavierLeon9966\ProperDuels\libs\_b71f10ec8387eb2c\SOFe\Zleep\Zleep;
 
 final class Game{
 

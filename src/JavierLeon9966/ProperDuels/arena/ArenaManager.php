@@ -10,9 +10,9 @@ use JavierLeon9966\ProperDuels\config\DatabaseType;
 use JavierLeon9966\ProperDuels\RawQueries;
 use pocketmine\math\Vector3;
 use pocketmine\utils\AssumptionFailedError;
-use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\poggit\libasynql\SqlError;
+use JavierLeon9966\ProperDuels\libs\_b71f10ec8387eb2c\poggit\libasynql\SqlError;
 use RuntimeException;
-use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\SOFe\AwaitGenerator\Await;
+use JavierLeon9966\ProperDuels\libs\_b71f10ec8387eb2c\SOFe\AwaitGenerator\Await;
 
 final readonly class ArenaManager{
 

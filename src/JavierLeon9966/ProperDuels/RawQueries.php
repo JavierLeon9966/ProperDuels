@@ -10,8 +10,8 @@ declare(strict_types=1);
 namespace JavierLeon9966\ProperDuels;
 
 use Generator;
-use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\poggit\libasynql\DataConnector;
-use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\SOFe\AwaitGenerator\Await;
+use JavierLeon9966\ProperDuels\libs\_b71f10ec8387eb2c\poggit\libasynql\DataConnector;
+use JavierLeon9966\ProperDuels\libs\_b71f10ec8387eb2c\SOFe\AwaitGenerator\Await;
 
 final class RawQueries{
 	public function __construct(private DataConnector $conn) {}

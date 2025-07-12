@@ -4,8 +4,8 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels;
 
-use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\CortexPE\Commando\exception\HookAlreadyRegistered;
-use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\CortexPE\Commando\PacketHooker;
+use JavierLeon9966\ProperDuels\libs\_b71f10ec8387eb2c\CortexPE\Commando\exception\HookAlreadyRegistered;
+use JavierLeon9966\ProperDuels\libs\_b71f10ec8387eb2c\CortexPE\Commando\PacketHooker;
 use Generator;
 use JavierLeon9966\ProperDuels\arena\Arena;
 use JavierLeon9966\ProperDuels\arena\ArenaManager;
@@ -36,14 +36,14 @@ use pocketmine\plugin\PluginManager;
 use pocketmine\Server;
 use pocketmine\utils\AssumptionFailedError;
 use pocketmine\utils\ConfigLoadException;
-use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\poggit\libasynql\DataConnector;
-use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\poggit\libasynql\ExtensionMissingException;
-use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\poggit\libasynql\libasynql;
-use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\poggit\libasynql\SqlError;
+use JavierLeon9966\ProperDuels\libs\_b71f10ec8387eb2c\poggit\libasynql\DataConnector;
+use JavierLeon9966\ProperDuels\libs\_b71f10ec8387eb2c\poggit\libasynql\ExtensionMissingException;
+use JavierLeon9966\ProperDuels\libs\_b71f10ec8387eb2c\poggit\libasynql\libasynql;
+use JavierLeon9966\ProperDuels\libs\_b71f10ec8387eb2c\poggit\libasynql\SqlError;
 use RuntimeException;
-use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\SOFe\AwaitGenerator\Await;
-use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\SOFe\AwaitGenerator\Loading;
-use JavierLeon9966\ProperDuels\libs\_ded2d3c19935ef44\SOFe\InfoAPI\InfoAPI;
+use JavierLeon9966\ProperDuels\libs\_b71f10ec8387eb2c\SOFe\AwaitGenerator\Await;
+use JavierLeon9966\ProperDuels\libs\_b71f10ec8387eb2c\SOFe\AwaitGenerator\Loading;
+use JavierLeon9966\ProperDuels\libs\_b71f10ec8387eb2c\SOFe\InfoAPI\InfoAPI;
 use Symfony\Component\Filesystem\Path;
 
 final class ProperDuels extends PluginBase{
@@ -287,7 +287,7 @@ final class ProperDuels extends PluginBase{
 				'sqlite' => [
 					'file' => 'arenas.sqlite'
 				],
-				'worker-limit' => $unMarshaledConfig->database->workerLimit
+				'worker-limit' => 1
 			],
 			$statements
 		);
@@ -354,7 +354,7 @@ final class ProperDuels extends PluginBase{
 				'sqlite' => [
 					'file' => 'kits.sqlite'
 				],
-				'worker-limit' => $unMarshaledConfig->database->workerLimit
+				'worker-limit' => 1
 			],
 			$statements
 		);
@@ -409,7 +409,7 @@ final class ProperDuels extends PluginBase{
 						'schema' => $unMarshaledConfig->database->mysql->schema,
 						'port' => $unMarshaledConfig->database->mysql->port
 					],
-					'worker-limit' => $unMarshaledConfig->database->workerLimit
+					'worker-limit' => $unMarshaledConfig->database->type === DatabaseType::Sqlite3 ? 1 : $unMarshaledConfig->database->workerLimit
 				],
 				$statements
 			));
