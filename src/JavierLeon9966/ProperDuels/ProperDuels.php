@@ -287,7 +287,7 @@ final class ProperDuels extends PluginBase{
 				'sqlite' => [
 					'file' => 'arenas.sqlite'
 				],
-				'worker-limit' => $unMarshaledConfig->database->workerLimit
+				'worker-limit' => 1
 			],
 			$statements
 		);
@@ -354,7 +354,7 @@ final class ProperDuels extends PluginBase{
 				'sqlite' => [
 					'file' => 'kits.sqlite'
 				],
-				'worker-limit' => $unMarshaledConfig->database->workerLimit
+				'worker-limit' => 1
 			],
 			$statements
 		);
@@ -409,7 +409,7 @@ final class ProperDuels extends PluginBase{
 						'schema' => $unMarshaledConfig->database->mysql->schema,
 						'port' => $unMarshaledConfig->database->mysql->port
 					],
-					'worker-limit' => $unMarshaledConfig->database->workerLimit
+					'worker-limit' => $unMarshaledConfig->database->type === DatabaseType::Sqlite3 ? 1 : $unMarshaledConfig->database->workerLimit
 				],
 				$statements
 			));
