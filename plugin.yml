@@ -39,3 +39,6 @@ permissions:
   properduels.command.kit.list:
     description: Allows the user to list kits
     default: op
+  properduels.command.kit.update:
+    description: Allows the user to update kits
+    default: op

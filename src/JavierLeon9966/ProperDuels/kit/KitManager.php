@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels\kit;
 
+use Closure;
 use Generator;
 use JavierLeon9966\ProperDuels\config\DatabaseType;
 use JavierLeon9966\ProperDuels\RawQueries;
@@ -12,24 +13,57 @@ use pocketmine\data\bedrock\item\ItemTypeDeserializeException;
 use pocketmine\data\SavedDataLoadingException;
 use pocketmine\nbt\NbtDataException;
 use pocketmine\utils\AssumptionFailedError;
-use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\poggit\libasynql\SqlError;
+use JavierLeon9966\ProperDuels\libs\_3b83941958c6d0cd\poggit\libasynql\SqlError;
 use RuntimeException;
-use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\SOFe\AwaitGenerator\Await;
+use JavierLeon9966\ProperDuels\libs\_3b83941958c6d0cd\SOFe\AwaitGenerator\Await;
 
 final readonly class KitManager{
 
 	private function __construct(private RawQueries $queries){
 	}
 
-	/** @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, KitManager> */
-	public static function create(RawQueries $mergedDb, DatabaseType $type): Generator{
-		$gen = $mergedDb->initKits();
-		if($type === DatabaseType::Mysql){
+	/**
+	 * @param null|Closure(KitManager): Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, void> $extraSetup
+	 * @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, KitManager>
+	 */
+	public static function create(RawQueries $queries, DatabaseType $type, ?Closure $extraSetup = null): Generator{
+		$kitManager = new self($queries);
+		$gen = $queries->initKits();
+		if($type === DatabaseType::Sqlite3){
+			yield from $queries->initForeignKeys();
 			yield from $gen;
-		}else{
-			Await::g2c($gen);
+			return $kitManager;
 		}
-		return new self($mergedDb);
+		try{
+			yield from $gen;
+		}catch(SqlError $e){
+			if(preg_match('/^procedure [^ ]+ already exists$/i', $e->getErrorMessage()) === 1){
+				// ignore
+			}else{
+				throw new AssumptionFailedError('This should never happen', 0, $e);
+			}
+		}
+
+		try{
+			/** @var list<array{Name: string, Kit: string}> $rows */
+			$rows = yield from $queries->loadOldKits();
+		}catch(SqlError $e){
+			if(str_contains(strtolower($e->getMessage()), 'unknown column')){
+				return $kitManager;
+			}else{
+				throw new AssumptionFailedError('This should never happen', 0, $e);
+			}
+		}
+		/** @var int<0, 1> $migrationNeeded */
+		[['migrationNeeded' => $migrationNeeded]] = yield from $queries->checkForMigrationKits();
+		if($migrationNeeded === 0){
+			return $kitManager;
+		}
+		yield from $kitManager->migrateOldRows($rows);
+		if($extraSetup !== null){
+			yield from $extraSetup($kitManager);
+		}
+		return $kitManager;
 	}
 
 	/**
@@ -97,6 +131,27 @@ final readonly class KitManager{
 		return $changedRows > 0;
 	}
 
+	/** @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, \JavierLeon9966\ProperDuels\kit\KitUpdateStatus> */
+	public function update(string $kitName, Kit $kit): Generator{
+		/**
+		 * @var ?Kit $oldKit
+		 * @var int<0, 1> $changedRows
+		 */
+		[$oldKit, $changedRows] = yield from Await::all([$this->get($kitName), $this->queries->updateKit(
+			$kitName,
+			ContentsSerializer::serializeItemContents($kit->getArmor()),
+			ContentsSerializer::serializeItemContents($kit->getInventory()),
+			$kit->getName()
+		)]);
+		if($oldKit === null){
+			return KitUpdateStatus::NOT_FOUND;
+		}
+		if($changedRows === 0){
+			return KitUpdateStatus::NO_CHANGES;
+		}
+		return KitUpdateStatus::SUCCESS;
+	}
+
 	/** @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, list<Kit>> */
 	public function getList(int $offset, int $limit): Generator{
 		/** @var list<array{'Name': string, 'Armor': string, 'Inventory': string}> $rows */
@@ -121,4 +176,18 @@ final readonly class KitManager{
 		return $kits;
 	}
 
+	/**
+	 * @param list<array{Name: string, Kit: string}|array{Name: string, Armor: string, Inventory: string}> $rows
+	 * @return Generator<mixed, Await::RESOLVE|null|Await::RESOLVE_MULTI|Await::REJECT|Await::ONCE|Await::ALL|Await::RACE|Generator<mixed, mixed, mixed, mixed>, mixed, void>
+	 */
+	public function migrateOldRows(array $rows): Generator{
+		/** @var array<string, Kit> $rows */
+		$rows = array_map(unserialize(...), array_column($rows, 'Kit', 'Name'));
+		try{
+			$gens = array_map($this->add(...), $rows);
+		}catch(RuntimeException $e){
+			throw new AssumptionFailedError('This should never happen', 0, $e);
+		}
+		yield from Await::all($gens);
+	}
 }

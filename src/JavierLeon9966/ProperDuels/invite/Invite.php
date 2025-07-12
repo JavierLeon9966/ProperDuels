@@ -14,7 +14,7 @@ use pocketmine\plugin\PluginManager;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\scheduler\TaskHandler;
 use pocketmine\utils\AssumptionFailedError;
-use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\SOFe\InfoAPI\InfoAPI;
+use JavierLeon9966\ProperDuels\libs\_3b83941958c6d0cd\SOFe\InfoAPI\InfoAPI;
 
 final class Invite{
 

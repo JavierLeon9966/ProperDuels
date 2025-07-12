@@ -4,10 +4,10 @@ declare(strict_types = 1);
 
 namespace JavierLeon9966\ProperDuels\command\duel\subcommand;
 
-use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\CortexPE\Commando\args\RawStringArgument;
-use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\CortexPE\Commando\BaseSubCommand;
-use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\CortexPE\Commando\constraint\InGameRequiredConstraint;
-use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\CortexPE\Commando\exception\ArgumentOrderException;
+use JavierLeon9966\ProperDuels\libs\_3b83941958c6d0cd\CortexPE\Commando\args\RawStringArgument;
+use JavierLeon9966\ProperDuels\libs\_3b83941958c6d0cd\CortexPE\Commando\BaseSubCommand;
+use JavierLeon9966\ProperDuels\libs\_3b83941958c6d0cd\CortexPE\Commando\constraint\InGameRequiredConstraint;
+use JavierLeon9966\ProperDuels\libs\_3b83941958c6d0cd\CortexPE\Commando\exception\ArgumentOrderException;
 use Generator;
 use JavierLeon9966\ProperDuels\arena\ArenaManager;
 use JavierLeon9966\ProperDuels\QueueManager;
@@ -15,7 +15,7 @@ use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\{AssumptionFailedError, TextFormat};
-use JavierLeon9966\ProperDuels\libs\_92d1364612b7d666\SOFe\AwaitGenerator\Await;
+use JavierLeon9966\ProperDuels\libs\_3b83941958c6d0cd\SOFe\AwaitGenerator\Await;
 
 class QueueSubCommand extends BaseSubCommand{
 
