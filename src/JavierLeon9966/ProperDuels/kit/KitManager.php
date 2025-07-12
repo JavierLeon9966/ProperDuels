@@ -58,19 +58,20 @@ final readonly class KitManager{
 		}
 
 		try{
-			/** @var list<array{Name: string, Kit: string}> $rows */
-			$rows = yield from $this->queries->loadOldKits();
+			/**
+			 * @var array{array{'migrationNeeded': int<0, 1>}} $migrationRows
+			 * @var list<array{Name: string, Kit: string}> $rows
+			 */
+			[$migrationRows, $rows] = yield from Await::all([$this->queries->checkForMigrationKits(), $this->queries->loadOldKits()]);
+			if($migrationRows[0]['migrationNeeded'] === 0){
+				return;
+			}
 		}catch(SqlError $e){
 			if(str_contains(strtolower($e->getMessage()), 'unknown column')){
 				return;
 			}else{
 				throw new AssumptionFailedError('This should never happen', 0, $e);
 			}
-		}
-		/** @var int<0, 1> $migrationNeeded */
-		[['migrationNeeded' => $migrationNeeded]] = yield from $this->queries->checkForMigrationKits();
-		if($migrationNeeded === 0){
-			return;
 		}
 		yield from $this->migrateOldRows($rows);
 	}
