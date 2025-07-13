@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         php:
-          - "8.3"
+          - "8.2"
     steps:
       - uses: actions/checkout@v4
       - uses: pmmp/setup-php-action@3.2.0
@@ -41,7 +41,7 @@ jobs:
     strategy:
       matrix:
         php:
-          - "8.3"
+          - "8.2"
     steps:
       - uses: actions/checkout@v4
       - uses: pmmp/setup-php-action@3.2.0
